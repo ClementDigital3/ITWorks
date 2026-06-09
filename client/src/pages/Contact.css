@@ -1,0 +1,62 @@
+.quick-contact{padding:0 48px;background:var(--black);position:relative;z-index:1}
+.quick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
+.quick-card{background:var(--black3);padding:32px 28px;display:flex;align-items:center;gap:20px;transition:all var(--transition);border:1px solid var(--black5);position:relative;overflow:hidden}
+.quick-card::before{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--green);transform:scaleX(0);transform-origin:left;transition:transform 0.4s}
+.quick-card:hover{background:var(--black4);border-color:rgba(43,176,74,0.25)}
+.quick-card:hover::before{transform:scaleX(1)}
+.quick-card.wa::before{background:#25D366}
+.quick-icon{width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all var(--transition)}
+.quick-icon-call{background:rgba(43,176,74,0.1);border:1px solid rgba(43,176,74,0.2);color:var(--green)}
+.quick-icon-wa{background:rgba(37,211,102,0.1);border:1px solid rgba(37,211,102,0.2);color:#25D366}
+.quick-icon-email{background:rgba(232,64,26,0.1);border:1px solid rgba(232,64,26,0.2);color:var(--orange)}
+.quick-card:hover .quick-icon{transform:scale(1.1)}
+.quick-label{font-size:11px;color:var(--grey3);text-transform:uppercase;letter-spacing:1px;font-family:var(--font-mono)}
+.quick-value{font-size:16px;font-weight:700;color:var(--white);margin-top:4px}
+.quick-sub{font-size:12px;color:var(--grey3);margin-top:2px}
+.quick-arrow{margin-left:auto;color:var(--grey4);transition:transform var(--transition),color var(--transition)}
+.quick-card:hover .quick-arrow{transform:translateX(4px);color:var(--green)}
+.contact-main{padding:80px 48px;background:var(--black)}
+.contact-inner{display:grid;grid-template-columns:1.1fr 0.9fr;gap:60px;max-width:1200px;margin:0 auto}
+.contact-form-wrap{background:var(--black3);border:1px solid var(--black5);border-radius:12px;padding:48px;position:relative;overflow:hidden}
+.contact-form-wrap::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--green),var(--orange))}
+.form-title{font-family:var(--font-display);font-size:32px;font-weight:900;text-transform:uppercase;color:var(--white);margin-bottom:8px}
+.form-sub{font-size:14px;color:var(--grey3);margin-bottom:36px;line-height:1.6}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:0}
+.form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.form-group label{font-size:12px;font-weight:600;color:var(--grey2);text-transform:uppercase;letter-spacing:1px}
+.form-group input,.form-group select,.form-group textarea{background:var(--black4);border:1px solid var(--black5);border-radius:var(--radius);padding:13px 16px;color:var(--white);font-size:15px;font-family:var(--font-body);transition:border-color var(--transition),box-shadow var(--transition);outline:none;width:100%}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(43,176,74,0.1)}
+.form-group input::placeholder,.form-group textarea::placeholder{color:var(--grey4)}
+.form-group select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23707070' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;background-size:16px;padding-right:40px}
+.form-group select option{background:var(--black3)}
+.form-group textarea{resize:vertical;min-height:110px;line-height:1.6}
+.form-submit{width:100%;padding:16px 28px;background:var(--green);color:var(--white);font-size:15px;font-weight:700;border-radius:var(--radius);border:none;cursor:pointer;font-family:var(--font-body);display:flex;align-items:center;justify-content:center;gap:12px;transition:all var(--transition);box-shadow:0 0 28px rgba(43,176,74,0.3)}
+.form-submit:hover{background:var(--green2);transform:translateY(-1px);box-shadow:0 8px 32px rgba(43,176,74,0.45)}
+.form-submit:disabled{opacity:0.6;cursor:not-allowed;transform:none}
+.form-note{font-size:12px;color:var(--grey3);text-align:center;margin-top:14px;line-height:1.6}
+.form-error{font-size:13px;color:var(--orange);margin-bottom:12px;padding:12px;background:rgba(232,64,26,0.1);border:1px solid rgba(232,64,26,0.2);border-radius:var(--radius)}
+.form-success{background:rgba(43,176,74,0.1);border:1px solid rgba(43,176,74,0.3);border-radius:var(--radius);padding:32px;text-align:center}
+.form-success p{color:var(--green);font-weight:600;font-size:16px}
+.info-block{margin-bottom:36px}
+.info-block-title{font-family:var(--font-display);font-size:20px;font-weight:800;text-transform:uppercase;color:var(--white);letter-spacing:0.5px;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--black4)}
+.info-item{display:flex;align-items:flex-start;gap:16px;margin-bottom:20px}
+.info-icon{width:44px;height:44px;background:rgba(43,176,74,0.1);border:1px solid rgba(43,176,74,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--green);flex-shrink:0}
+.info-label{font-size:11px;color:var(--grey3);text-transform:uppercase;letter-spacing:1px;font-family:var(--font-mono)}
+.info-val{font-size:16px;color:var(--white);font-weight:600;margin-top:4px}
+.info-sub{font-size:12px;color:var(--grey3);margin-top:2px}
+.hours-grid{display:flex;flex-direction:column;gap:8px}
+.hours-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--black3);border-radius:6px;border:1px solid var(--black5)}
+.hours-day{font-size:13px;color:var(--grey2);font-weight:500}
+.hours-time{font-size:13px;color:var(--green);font-weight:600;font-family:var(--font-mono)}
+.hours-time.closed{color:var(--grey4)}
+.map-wrap{border-radius:12px;overflow:hidden;border:1px solid var(--black4);height:220px;margin-top:36px}
+.map-embed-contact{width:100%;height:100%;border:0;filter:invert(1) hue-rotate(180deg) saturate(0.7) brightness(0.8)}
+@media(max-width:1024px){
+  .quick-contact,.contact-main{padding-left:28px;padding-right:28px}
+  .quick-grid{grid-template-columns:1fr}
+  .contact-inner{grid-template-columns:1fr;gap:40px}
+  .form-row{grid-template-columns:1fr}
+}
+@media(max-width:640px){
+  .contact-form-wrap{padding:28px 20px}
+}

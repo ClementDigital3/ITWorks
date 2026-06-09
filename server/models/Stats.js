@@ -1,0 +1,11 @@
+import mongoose from 'mongoose'
+
+const statsSchema = new mongoose.Schema({
+  installations:  { type: Number, default: 200 },
+  businessClients:{ type: Number, default: 50 },
+  yearsExperience:{ type: Number, default: 5 },
+  citiesServed:   { type: Number, default: 15 },
+  satisfaction:   { type: Number, default: 98 },
+}, { timestamps: true })
+
+export default mongoose.model('Stats', statsSchema)

@@ -1,0 +1,11 @@
+footer{background:var(--black);border-top:1px solid var(--black4);padding:80px 48px 40px;position:relative;z-index:1}
+.nav-logo{display:flex;align-items:center;gap:14px;margin-bottom:0}
+.nav-logo-icon{width:40px;height:40px;background:var(--green);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative;overflow:hidden}
+.nav-logo-icon::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.1),transparent)}
+.logo-arrows{display:flex;flex-direction:column;align-items:center;gap:1px}
+.arrow-up{width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:9px solid #fff}
+.arrow-down{width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:9px solid var(--orange)}
+.nav-logo-text{display:flex;flex-direction:column;line-height:1}
+.nav-logo-text span:first-child{font-family:var(--font-display);font-size:20px;font-weight:800;letter-spacing:1px;color:var(--white)}
+.nav-logo-text span:last-child{font-family:var(--font-display);font-size:10px;font-weight:600;letter-spacing:3px;color:var(--green);text-transform:uppercase}
+@media(max-width:640px){footer{padding-bottom:80px}}

@@ -1,0 +1,62 @@
+.services-filter{padding:0 48px;background:var(--black2);position:sticky;top:var(--nav-h);z-index:100;border-bottom:1px solid var(--black4)}
+.filter-inner{display:flex;align-items:center;gap:8px;padding:16px 0;overflow-x:auto;scrollbar-width:none}
+.filter-inner::-webkit-scrollbar{display:none}
+.filter-btn{padding:9px 20px;background:transparent;border:1px solid var(--black5);color:var(--grey3);font-size:13px;font-weight:500;border-radius:40px;white-space:nowrap;transition:all var(--transition);font-family:var(--font-body);cursor:pointer}
+.filter-btn:hover{border-color:var(--green);color:var(--white)}
+.filter-btn.active{background:var(--green);border-color:var(--green);color:var(--white)}
+.services-main{padding:80px 48px;background:var(--black)}
+.services-list{display:flex;flex-direction:column;gap:2px}
+.service-block{background:var(--black2);border:1px solid var(--black4);border-radius:var(--radius);overflow:hidden;transition:border-color var(--transition)}
+.service-block:hover{border-color:rgba(43,176,74,0.25)}
+.service-block-header{display:grid;grid-template-columns:80px 1fr auto;align-items:center;gap:32px;padding:40px 48px;cursor:pointer;position:relative}
+.service-block-header::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--green);transform:scaleY(0);transform-origin:bottom;transition:transform 0.4s}
+.service-block.open .service-block-header::before{transform:scaleY(1)}
+.svc-num{font-family:var(--font-display);font-size:64px;font-weight:900;color:var(--black4);line-height:1;user-select:none;transition:color var(--transition)}
+.service-block:hover .svc-num,.service-block.open .svc-num{color:rgba(43,176,74,0.12)}
+.svc-header-content{flex:1}
+.svc-icon-row{display:flex;align-items:center;gap:16px;margin-bottom:12px}
+.svc-icon{width:44px;height:44px;background:rgba(43,176,74,0.1);border:1px solid rgba(43,176,74,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--green);transition:all var(--transition);flex-shrink:0}
+.service-block:hover .svc-icon,.service-block.open .svc-icon{background:rgba(43,176,74,0.18);border-color:rgba(43,176,74,0.4)}
+.svc-tag{padding:4px 12px;background:rgba(232,64,26,0.1);border:1px solid rgba(232,64,26,0.2);border-radius:20px;font-size:11px;font-weight:600;color:var(--orange);letter-spacing:1px;text-transform:uppercase;font-family:var(--font-mono)}
+.svc-title{font-family:var(--font-display);font-size:clamp(24px,3vw,36px);font-weight:900;text-transform:uppercase;letter-spacing:0.5px;color:var(--white);line-height:1}
+.svc-tagline{font-size:14px;color:var(--grey3);margin-top:6px}
+.svc-toggle{width:44px;height:44px;background:var(--black4);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--grey3);transition:all var(--transition);flex-shrink:0}
+.service-block.open .svc-toggle{background:var(--green);color:var(--white);transform:rotate(45deg)}
+.service-block-body{max-height:0;overflow:hidden;transition:max-height 0.5s cubic-bezier(0.4,0,0.2,1)}
+.service-block.open .service-block-body{max-height:900px}
+.svc-body-inner{padding:40px 48px;display:grid;grid-template-columns:1.2fr 1fr;gap:60px;border-top:1px solid var(--black4)}
+.svc-description{font-size:15px;color:var(--grey2);line-height:1.8;margin-bottom:28px}
+.svc-features{list-style:none;display:flex;flex-direction:column;gap:10px}
+.svc-features li{display:flex;align-items:center;gap:12px;font-size:14px;color:var(--grey1)}
+.svc-features li::before{content:'';width:20px;height:20px;flex-shrink:0;background:rgba(43,176,74,0.12);border:1px solid rgba(43,176,74,0.3);border-radius:4px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232BB04A' stroke-width='2.5'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");background-size:12px;background-repeat:no-repeat;background-position:center}
+.svc-pricing{background:var(--black3);border:1px solid var(--black5);border-radius:var(--radius);padding:28px;margin-bottom:24px}
+.svc-pricing-label{font-family:var(--font-mono);font-size:10px;letter-spacing:2px;color:var(--grey3);text-transform:uppercase;margin-bottom:12px}
+.pricing-tiers{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.tier{padding:6px 16px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid transparent}
+.tier-basic{background:rgba(43,176,74,0.08);border-color:rgba(43,176,74,0.2);color:var(--green)}
+.tier-standard{background:rgba(43,176,74,0.14);border-color:rgba(43,176,74,0.35);color:var(--green2)}
+.tier-premium{background:rgba(232,64,26,0.1);border-color:rgba(232,64,26,0.25);color:var(--orange)}
+.svc-pricing-note{font-size:12px;color:var(--grey3);line-height:1.6}
+.svc-cta-group{display:flex;flex-direction:column;gap:10px}
+.faq-section{padding:100px 48px;background:var(--black2)}
+.faq-inner{max-width:800px;margin:0 auto}
+.faq-header{text-align:center;margin-bottom:56px}
+.faq-list{display:flex;flex-direction:column;gap:2px}
+.faq-item{background:var(--black3);border:1px solid var(--black5);border-radius:var(--radius);overflow:hidden;transition:border-color var(--transition)}
+.faq-item:hover{border-color:rgba(43,176,74,0.2)}
+.faq-q{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:24px 28px;cursor:pointer;font-size:15px;font-weight:600;color:var(--white);transition:color var(--transition)}
+.faq-item.open .faq-q{color:var(--green)}
+.faq-icon{width:28px;height:28px;flex-shrink:0;background:var(--black4);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--grey3);transition:all var(--transition)}
+.faq-item.open .faq-icon{background:var(--green);color:var(--white);transform:rotate(45deg)}
+.faq-a{max-height:0;overflow:hidden;transition:max-height 0.4s ease}
+.faq-item.open .faq-a{max-height:200px}
+.faq-a-inner{padding:0 28px 24px;font-size:14px;color:var(--grey2);line-height:1.75}
+@media(max-width:1024px){
+  .services-filter,.services-main,.faq-section{padding-left:28px;padding-right:28px}
+  .service-block-header{grid-template-columns:60px 1fr auto;padding:28px;gap:20px}
+  .svc-body-inner{grid-template-columns:1fr;gap:32px;padding:28px}
+}
+@media(max-width:640px){
+  .service-block-header{grid-template-columns:1fr auto;padding:20px}
+  .svc-num{display:none}
+}

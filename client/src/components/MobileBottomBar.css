@@ -1,0 +1,8 @@
+.mobile-bottom-bar{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--black2);border-top:1px solid var(--black4);z-index:997}
+.mbb-inner{display:grid;grid-template-columns:1fr 1fr 1fr}
+.mbb-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:12px 8px;font-size:11px;color:var(--grey3);border-right:1px solid var(--black4);transition:all var(--transition)}
+.mbb-btn:last-child{border-right:none}
+.mbb-btn.wa{color:#25D366}
+.mbb-btn:hover{background:var(--black3);color:var(--white)}
+.mbb-btn svg{width:20px;height:20px}
+@media(max-width:640px){.mobile-bottom-bar{display:block}}
