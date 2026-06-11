@@ -22,18 +22,20 @@ const contactLimiter = rateLimit({
 // ── Routes ────────────────────────────────────────────────────────────────
 app.use('/api/contact', contactLimiter, require('./routes/contact'))
 app.use('/api/projects', require('./routes/projects'))
+app.use('/api/services', require('./routes/services'))
+app.use('/api/stats', require('./routes/stats'))
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'OK', time: new Date() }))
 
-// ── MongoDB ───────────────────────────────────────────────────────────────
+// ── Server & MongoDB ──────────────────────────────────────────────────────
+const PORT = process.env.PORT || 5000
+app.listen(PORT, () => console.log(`✓ Server running on port ${PORT}`))
+
 mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/itworks')
-  .then(() => {
-    console.log('✓ MongoDB connected')
-    const PORT = process.env.PORT || 5000
-    app.listen(PORT, () => console.log(`✓ Server running on port ${PORT}`))
-  })
+  .then(() => console.log('✓ MongoDB connected'))
   .catch(err => {
     console.error('✗ MongoDB connection failed:', err.message)
-    process.exit(1)
+    console.log('⚠ Server running in offline fallback mode')
   })
+// Trigger restart

@@ -9,6 +9,7 @@ import Services from './pages/Services'
 import About from './pages/About'
 import Projects from './pages/Projects'
 import Contact from './pages/Contact'
+import Admin from './pages/Admin'
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -17,20 +18,28 @@ function ScrollToTop() {
 }
 
 export default function App() {
+  const { pathname } = useLocation()
+  const isAdmin = pathname === '/admin'
+
   return (
     <>
       <ScrollToTop />
-      <Navbar />
+      {!isAdmin && <Navbar />}
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/services" element={<Services />} />
         <Route path="/about" element={<About />} />
         <Route path="/projects" element={<Projects />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/admin" element={<Admin />} />
       </Routes>
-      <Footer />
-      <WhatsAppButton />
-      <MobileBottomBar />
+      {!isAdmin && (
+        <>
+          <Footer />
+          <WhatsAppButton />
+          <MobileBottomBar />
+        </>
+      )}
     </>
   )
 }

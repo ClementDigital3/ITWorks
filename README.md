@@ -25,56 +25,6 @@ itworks-mern/
     └── index.js
 ```
 
-## Getting Started
-
-### 1. Clone and install
-
-```bash
-# Install server dependencies
-cd server
-npm install
-
-# Install client dependencies
-cd ../client
-npm install
-```
-
-### 2. Configure environment
-
-```bash
-cd server
-cp .env.example .env
-# Edit .env with your MongoDB URI and SMTP credentials
-```
-
-### 3. Run in development
-
-```bash
-# Terminal 1 — Start backend
-cd server
-npm run dev        # runs on http://localhost:5000
-
-# Terminal 2 — Start frontend
-cd client
-npm run dev        # runs on http://localhost:3000
-```
-
-### 4. Deploy
-
-**Frontend → Vercel**
-```bash
-cd client
-npm run build
-# Push to GitHub, connect to Vercel
-# Set VITE_API_URL env var to your Railway backend URL
-```
-
-**Backend → Railway**
-```bash
-# Push server/ to GitHub
-# Connect to Railway
-# Set environment variables: MONGO_URI, CLIENT_URL, SMTP_USER, SMTP_PASS
-```
 
 ## API Endpoints
 
@@ -87,17 +37,32 @@ npm run build
 | POST | /api/projects | Add new project |
 | PUT | /api/projects/:id | Update project |
 | DELETE | /api/projects/:id | Delete project |
+| GET | /api/services | Get all services |
+| GET | /api/services/:slug | Get a single service |
+| GET | /api/stats | Get website stats |
 | GET | /api/health | Server health check |
 
-## Environment Variables
+## How to Run Locally
 
-```env
-PORT=5000
-MONGO_URI=mongodb+srv://...
-CLIENT_URL=http://localhost:3000
-SMTP_HOST=smtp.gmail.com
-SMTP_USER=your@gmail.com
-SMTP_PASS=your_app_password
-NOTIFY_EMAIL=info@itworks.co.ke
-```
-#ITWorks
+1. Install all dependencies:
+   ```bash
+   npm run install-all
+   ```
+2. Start the development servers (client + server concurrently):
+   ```bash
+   npm run dev
+   ```
+
+## Database Management & Content Updates
+
+To securely add, update, or remove projects and services directly:
+
+1. **Using MongoDB Compass (Desktop UI)**:
+   - Connect using the URI from `server/.env` (`mongodb+srv://trademint:Trademint2025@cluster0.4wpqqge.mongodb.net/itworks`).
+   - Open the `itworks` database to edit the following collections:
+     - **`projects`**: Manage projects shown on the Projects page.
+     - **`services`**: Manage core services shown on the Services page.
+     - **`stats`**: Manage counter statistics shown on the Home page.
+
+2. **Using MongoDB Atlas (Web Dashboard)**:
+   - Go to your MongoDB Atlas dashboard under **Database** > **Browse Collections** and navigate to `itworks` database to edit collections directly.

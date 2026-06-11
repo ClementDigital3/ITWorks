@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import logoImg from '../assets/logo.png'
 import './Footer.css'
 
 export default function Footer() {
@@ -8,10 +9,7 @@ export default function Footer() {
         <div className="footer-brand">
           <Link to="/" className="nav-logo">
             <div className="nav-logo-icon">
-              <div className="logo-arrows">
-                <div className="arrow-up" />
-                <div className="arrow-down" />
-              </div>
+              <img src={logoImg} alt="ITWORKS Logo" className="logo-img" />
             </div>
             <div className="nav-logo-text">
               <span>ITWORKS</span>

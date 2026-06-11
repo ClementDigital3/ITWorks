@@ -1,6 +1,6 @@
-import Stats from '../models/Stats.js'
+const Stats = require('../models/Stats')
 
-export const getStats = async (req, res) => {
+exports.getStats = async (req, res) => {
   try {
     let stats = await Stats.findOne()
     if (!stats) stats = await Stats.create({})

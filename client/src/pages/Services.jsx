@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useReveal } from '../hooks/useReveal'
 import './Services.css'
@@ -46,9 +46,44 @@ export default function Services() {
   const [open, setOpen] = useState(null)
   const [faqOpen, setFaqOpen] = useState(null)
   const [filter, setFilter] = useState('All Services')
-  const revealRef = useReveal()
+  const [services, setServices] = useState(SERVICES)
+  const revealRef = useReveal([services])
 
-  const filtered = filter === 'All Services' ? SERVICES : SERVICES.filter(s => s.id === FILTER_MAP[filter])
+  useEffect(() => {
+    fetch('/api/services')
+      .then(res => {
+        if (!res.ok) throw new Error('API error')
+        return res.json()
+      })
+      .then(resData => {
+        if (resData && resData.success && Array.isArray(resData.data)) {
+          const slugToIdMap = {
+            'home-wifi': 'wifi',
+            'office-networks': 'networks',
+            'hotspot-captive-portal': 'hotspot',
+            'cctv-surveillance': 'cctv',
+            'structured-cabling': 'cabling',
+            'it-support': 'support'
+          }
+          const normalized = resData.data.map(s => ({
+            id: slugToIdMap[s.slug] || s.slug,
+            cat: s.tag,
+            title: s.title,
+            tagline: s.tagline,
+            desc: s.description,
+            features: s.features || [],
+            tiers: s.tiers ? s.tiers.map(t => t.label) : [],
+            comingSoon: s.comingSoon || false
+          }))
+          if (normalized.length > 0) {
+            setServices(normalized)
+          }
+        }
+      })
+      .catch(err => console.log('Using local services fallback:', err.message))
+  }, [])
+
+  const filtered = filter === 'All Services' ? services : services.filter(s => s.id === FILTER_MAP[filter])
 
   return (
     <main ref={revealRef}>
@@ -73,41 +108,59 @@ export default function Services() {
       <section className="services-main">
         <div className="services-list">
           {filtered.map((s, i) => (
-            <div key={s.id} className={`service-block reveal ${open === s.id ? 'open' : ''}`}>
-              <div className="service-block-header" onClick={() => setOpen(open === s.id ? null : s.id)}>
-                <div className="svc-num">0{i+1}</div>
-                <div className="svc-header-content">
-                  <div className="svc-icon-row">
-                    <div className="svc-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg></div>
-                    <span className="svc-tag">{s.cat}</span>
-                  </div>
-                  <div className="svc-title">{s.title}</div>
-                  <div className="svc-tagline">{s.tagline}</div>
-                </div>
-                <div className="svc-toggle">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                </div>
-              </div>
-              <div className="service-block-body">
-                <div className="svc-body-inner">
-                  <div>
-                    <p className="svc-description">{s.desc}</p>
-                    <ul className="svc-features">{s.features.map(f => <li key={f}>{f}</li>)}</ul>
-                  </div>
-                  <div>
-                    <div className="svc-pricing">
-                      <div className="svc-pricing-label">Service Tiers</div>
-                      <div className="pricing-tiers">
-                        {s.tiers.map((t,ti) => <span key={t} className={`tier tier-${['basic','standard','premium'][ti]}`}>{t}</span>)}
-                      </div>
-                      <div className="svc-pricing-note">Pricing depends on site requirements. Contact us for a free survey and accurate quote.</div>
+            <div key={s.id} className="reveal">
+              <div className={`service-block ${open === s.id ? 'open' : ''}`}>
+                <div className="service-block-header" onClick={() => setOpen(open === s.id ? null : s.id)}>
+                  <div className="svc-num">0{i+1}</div>
+                  <div className="svc-header-content">
+                    <div className="svc-icon-row">
+                      <div className="svc-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg></div>
+                      <span className="svc-tag">{s.cat}</span>
                     </div>
-                    <div className="svc-cta-group">
-                      <a href="https://wa.me/254700000000" className="btn-primary">Request on WhatsApp</a>
-                      <Link to="/contact" className="btn-ghost">Get a Free Quote</Link>
+                    <div className="svc-title">
+                      {s.title}
+                      {s.comingSoon && <span className="badge-coming-soon">Soon</span>}
                     </div>
+                    <div className="svc-tagline">{s.tagline}</div>
+                  </div>
+                  <div className="svc-toggle">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                   </div>
                 </div>
+                  <div className="service-block-body">
+                    <div className="svc-body-inner">
+                      {s.comingSoon ? (
+                        <div style={{gridColumn:'span 2'}}>
+                          <p className="svc-description" style={{marginBottom:'24px'}}>{s.desc}</p>
+                          <div style={{background:'rgba(245,158,11,0.05)', border:'1px solid rgba(245,158,11,0.2)', padding:'20px', borderRadius:'var(--radius)', display:'flex', flexDirection:'column', gap:'12px'}}>
+                            <div style={{color:'#f59e0b', fontWeight:700, fontSize:'14px', textTransform:'uppercase', letterSpacing:'0.5px'}}>Launching Soon in Eldoret</div>
+                            <p style={{fontSize:'14px', color:'var(--grey2)', margin:0, lineHeight:'1.6'}}>We are setting up operations and local equipment inventory for this service. Register your interest early to get priority booking and special introductory pricing when we launch.</p>
+                            <Link to={`/contact?interest=${encodeURIComponent(s.title)}`} className="btn-primary" style={{alignSelf:'flex-start', background:'#f59e0b', borderColor:'#f59e0b', color:'#000', marginTop:'8px'}}>Register Your Interest</Link>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div>
+                            <p className="svc-description">{s.desc}</p>
+                            <ul className="svc-features">{s.features.map(f => <li key={f}>{f}</li>)}</ul>
+                          </div>
+                          <div>
+                            <div className="svc-pricing">
+                              <div className="svc-pricing-label">Service Tiers</div>
+                              <div className="pricing-tiers">
+                                {s.tiers.map((t,ti) => <span key={t} className={`tier tier-${['basic','standard','premium'][ti]}`}>{t}</span>)}
+                              </div>
+                              <div className="svc-pricing-note">Pricing depends on site requirements. Contact us for a free survey and accurate quote.</div>
+                            </div>
+                            <div className="svc-cta-group">
+                              <a href="https://wa.me/254700000000" className="btn-primary">Request on WhatsApp</a>
+                              <Link to="/contact" className="btn-ghost">Get a Free Quote</Link>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
               </div>
             </div>
           ))}
@@ -122,12 +175,14 @@ export default function Services() {
           </div>
           <div className="faq-list">
             {FAQS.map((f, i) => (
-              <div key={i} className={`faq-item reveal ${faqOpen === i ? 'open' : ''}`}>
-                <div className="faq-q" onClick={() => setFaqOpen(faqOpen === i ? null : i)}>
-                  {f.q}
-                  <div className="faq-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+              <div key={i} className="reveal">
+                <div className={`faq-item ${faqOpen === i ? 'open' : ''}`}>
+                  <div className="faq-q" onClick={() => setFaqOpen(faqOpen === i ? null : i)}>
+                    {f.q}
+                    <div className="faq-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+                  </div>
+                  <div className="faq-a"><div className="faq-a-inner">{f.a}</div></div>
                 </div>
-                <div className="faq-a"><div className="faq-a-inner">{f.a}</div></div>
               </div>
             ))}
           </div>

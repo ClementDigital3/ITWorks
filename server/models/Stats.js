@@ -1,4 +1,4 @@
-import mongoose from 'mongoose'
+const mongoose = require('mongoose')
 
 const statsSchema = new mongoose.Schema({
   installations:  { type: Number, default: 200 },
@@ -8,4 +8,4 @@ const statsSchema = new mongoose.Schema({
   satisfaction:   { type: Number, default: 98 },
 }, { timestamps: true })
 
-export default mongoose.model('Stats', statsSchema)
+module.exports = mongoose.model('Stats', statsSchema)

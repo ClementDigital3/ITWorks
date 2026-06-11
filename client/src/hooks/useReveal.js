@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 
-export function useReveal() {
+export function useReveal(deps = []) {
   const ref = useRef(null)
 
   useEffect(() => {
@@ -22,7 +22,7 @@ export function useReveal() {
     }
 
     return () => observer.disconnect()
-  }, [])
+  }, deps)
 
   return ref
 }

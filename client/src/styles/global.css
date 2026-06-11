@@ -197,3 +197,21 @@ body::before{
   .cta-actions{flex-direction:column}
   .page-hero{padding-bottom:60px}
 }
+
+/* Coming Soon Badge */
+.badge-coming-soon {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 3px 8px;
+  border-radius: 40px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #f59e0b;
+  margin-left: 10px;
+  vertical-align: middle;
+  white-space: nowrap;
+}

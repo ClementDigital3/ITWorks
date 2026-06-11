@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useReveal } from '../hooks/useReveal'
 import './Projects.css'
@@ -33,8 +33,8 @@ const PROJECTS = [
     tags:['Perimeter Coverage','Night Vision','Loading Bay','RAID Storage','Security Access'] },
 ]
 
-const FILTERS = ['All Projects','Home WiFi','Office Networks','Hotspot','CCTV','Cabling']
-const FILTER_MAP = {'All Projects':null,'Home WiFi':'wifi','Office Networks':'networks','Hotspot':'hotspot','CCTV':'cctv','Cabling':'cabling'}
+const FILTERS = ['All Projects','Home WiFi','Office Networks']
+const FILTER_MAP = {'All Projects':null,'Home WiFi':'wifi','Office Networks':'networks'}
 
 const ICON_COLORS = { wifi:'rgba(43,176,74,0.15)', networks:'rgba(43,176,74,0.15)', hotspot:'rgba(232,64,26,0.15)', cctv:'rgba(100,100,255,0.15)', cabling:'rgba(255,180,0,0.15)' }
 const ICON_STROKE = { wifi:'#2BB04A', networks:'#2BB04A', hotspot:'#E8401A', cctv:'#8888ff', cabling:'#ffb400' }
@@ -58,10 +58,39 @@ function ProjectIcon({ cat }) {
 export default function Projects() {
   const [filter, setFilter] = useState('All Projects')
   const [lightbox, setLightbox] = useState(null)
-  const revealRef = useReveal()
+  const [projects, setProjects] = useState(PROJECTS)
+  const revealRef = useReveal([projects])
 
-  const filtered = filter === 'All Projects' ? PROJECTS : PROJECTS.filter(p => p.category === FILTER_MAP[filter])
-  const lb = PROJECTS.find(p => p.id === lightbox)
+  useEffect(() => {
+    fetch('/api/projects')
+      .then(res => {
+        if (!res.ok) throw new Error('API error')
+        return res.json()
+      })
+      .then(data => {
+        if (Array.isArray(data)) {
+          const normalized = data.map(p => ({
+            id: p._id || p.id,
+            category: p.category,
+            title: p.title,
+            location: p.location,
+            tag: p.tag,
+            large: p.large || false,
+            desc: p.description,
+            tags: p.tags || []
+          }))
+          if (normalized.length > 0) {
+            setProjects(normalized)
+          }
+        }
+      })
+      .catch(err => console.log('Using local projects fallback:', err.message))
+  }, [])
+
+  const activeCategories = ['wifi', 'networks']
+  const activeProjects = projects.filter(p => activeCategories.includes(p.category))
+  const filtered = filter === 'All Projects' ? activeProjects : activeProjects.filter(p => p.category === FILTER_MAP[filter])
+  const lb = projects.find(p => p.id === lightbox)
 
   return (
     <main ref={revealRef}>
@@ -86,23 +115,25 @@ export default function Projects() {
       <section className="projects-section">
         <div className="projects-grid">
           {filtered.map((p, i) => (
-            <div key={p.id} className={`project-card reveal ${p.large ? 'large' : ''}`} onClick={() => setLightbox(p.id)}>
-              <div className="project-img">
-                <div className="project-placeholder">
-                  <div className="proj-rings"><div className="proj-ring"/><div className="proj-ring"/><div className="proj-ring"/></div>
-                  <ProjectIcon cat={p.category}/>
-                  <div className="proj-placeholder-label">{p.category.toUpperCase()}</div>
+            <div key={p.id} className={`reveal ${p.large ? 'large' : ''}`}>
+              <div className="project-card" onClick={() => setLightbox(p.id)}>
+                <div className="project-img">
+                  <div className="project-placeholder">
+                    <div className="proj-rings"><div className="proj-ring"/><div className="proj-ring"/><div className="proj-ring"/></div>
+                    <ProjectIcon cat={p.category}/>
+                    <div className="proj-placeholder-label">{p.category.toUpperCase()}</div>
+                  </div>
+                  <div className="project-overlay"><span>Click to View Details →</span></div>
                 </div>
-                <div className="project-overlay"><span>Click to View Details →</span></div>
-              </div>
-              <div className="project-meta">
-                <div className="proj-cat">{p.category.charAt(0).toUpperCase() + p.category.slice(1)}</div>
-                <div className="proj-title">{p.title}</div>
-                <div className="proj-location">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                  {p.location}
+                <div className="project-meta">
+                  <div className="proj-cat">{p.category.charAt(0).toUpperCase() + p.category.slice(1)}</div>
+                  <div className="proj-title">{p.title}</div>
+                  <div className="proj-location">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    {p.location}
+                  </div>
+                  <span className="proj-tag">{p.tag}</span>
                 </div>
-                <span className="proj-tag">{p.tag}</span>
               </div>
             </div>
           ))}

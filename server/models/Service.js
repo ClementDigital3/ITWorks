@@ -9,7 +9,8 @@ const serviceSchema = new mongoose.Schema({
   features:    [{ type: String }],
   tiers:       [{ name: String, label: String }],
   icon:        { type: String },
-  order:       { type: Number, default: 0 }
+  order:       { type: Number, default: 0 },
+  comingSoon:  { type: Boolean, default: false }
 })
 
 module.exports = mongoose.model('Service', serviceSchema)

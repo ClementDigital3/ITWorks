@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { NavLink } from 'react-router-dom'
 import './Navbar.css'
 
+import logoImg from '../assets/logo.png'
+
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -19,10 +21,7 @@ export default function Navbar() {
       <nav className={scrolled ? 'scrolled' : ''}>
         <NavLink to="/" className="nav-logo" onClick={closeMenu}>
           <div className="nav-logo-icon">
-            <div className="logo-arrows">
-              <div className="arrow-up" />
-              <div className="arrow-down" />
-            </div>
+            <img src={logoImg} alt="ITWORKS Logo" className="logo-img" />
           </div>
           <div className="nav-logo-text">
             <span>ITWORKS</span>

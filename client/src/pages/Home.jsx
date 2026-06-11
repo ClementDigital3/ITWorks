@@ -1,15 +1,15 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useReveal } from '../hooks/useReveal'
 import './Home.css'
 
 const SERVICES = [
-  { num:'01', icon:'wifi', title:'Home WiFi Setup', desc:'Full-home coverage planning, router installation, and configuration. We ensure every corner gets strong, reliable internet.' },
-  { num:'02', icon:'network', title:'Office Networks', desc:'Enterprise-grade LAN/WAN infrastructure with managed switches, access points, and VLAN segmentation for secure offices.' },
-  { num:'03', icon:'hotspot', title:'Hotspot Deployment', desc:'High-density hotspot systems for hotels and estates. Includes captive portal, M-Pesa billing, and bandwidth management.' },
-  { num:'04', icon:'cctv', title:'CCTV & Surveillance', desc:'HD IP and analog CCTV installation with remote viewing setup. Protect your home or business professionally.' },
-  { num:'05', icon:'cable', title:'Structured Cabling', desc:'Cat5e/Cat6 data cabling, patch panels, and cable management for clean, scalable network infrastructure.' },
-  { num:'06', icon:'support', title:'IT Support', desc:'Ongoing network monitoring, remote and on-site troubleshooting, and preventive maintenance contracts.' },
+  { num:'01', icon:'wifi', title:'Home WiFi Setup', desc:'Full-home coverage planning, router installation, and configuration. We ensure every corner gets strong, reliable internet.', comingSoon: false },
+  { num:'02', icon:'network', title:'Office Networks', desc:'Enterprise-grade LAN/WAN infrastructure with managed switches, access points, and VLAN segmentation for secure offices.', comingSoon: false },
+  { num:'03', icon:'hotspot', title:'Hotspot Deployment', desc:'High-density hotspot systems for hotels and estates. Includes captive portal, M-Pesa billing, and bandwidth management.', comingSoon: true },
+  { num:'04', icon:'cctv', title:'CCTV & Surveillance', desc:'HD IP and analog CCTV installation with remote viewing setup. Protect your home or business professionally.', comingSoon: true },
+  { num:'05', icon:'cable', title:'Structured Cabling', desc:'Cat5e/Cat6 data cabling, patch panels, and cable management for clean, scalable network infrastructure.', comingSoon: true },
+  { num:'06', icon:'support', title:'IT Support', desc:'Ongoing network monitoring, remote and on-site troubleshooting, and preventive maintenance contracts.', comingSoon: false },
 ]
 
 const STATS = [
@@ -63,6 +63,25 @@ function Counter({ target, suffix }) {
 
 export default function Home() {
   const revealRef = useReveal()
+  const [stats, setStats] = useState(STATS)
+
+  useEffect(() => {
+    fetch('/api/stats')
+      .then(res => {
+        if (!res.ok) throw new Error('API error')
+        return res.json()
+      })
+      .then(data => {
+        if (data) {
+          setStats([
+            { num: data.installations || 200, label: 'Installations', suffix: '+' },
+            { num: data.businessClients || 50, label: 'Business Clients', suffix: '+' },
+            { num: data.yearsExperience || 5, label: 'Years Experience', suffix: '+' }
+          ])
+        }
+      })
+      .catch(err => console.log('Using local stats fallback:', err.message))
+  }, [])
 
   return (
     <main ref={revealRef}>
@@ -167,11 +186,20 @@ export default function Home() {
             <div className={`service-card reveal reveal-delay-${i % 3}`} key={s.num}>
               <span className="service-num">{s.num}</span>
               <div className="service-icon"><ServiceIcon type={s.icon}/></div>
-              <h3>{s.title}</h3>
+              <h3>
+                {s.title}
+                {s.comingSoon && <span className="badge-coming-soon">Soon</span>}
+              </h3>
               <p>{s.desc}</p>
-              <Link to="/services" className="service-link">
-                Learn More <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-              </Link>
+              {s.comingSoon ? (
+                <Link to={`/contact?interest=${encodeURIComponent(s.title)}`} className="service-link" style={{color: '#f59e0b'}}>
+                  Register Interest <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                </Link>
+              ) : (
+                <Link to="/services" className="service-link">
+                  Learn More <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                </Link>
+              )}
             </div>
           ))}
         </div>
@@ -186,7 +214,7 @@ export default function Home() {
             <p className="reveal reveal-delay-2">From single-room WiFi to multi-floor enterprise networks — we've built a reputation on reliability, professionalism, and results that last.</p>
           </div>
           <div className="stats-grid">
-            {STATS.map((s, i) => (
+            {stats.map((s, i) => (
               <div className={`stat-card reveal reveal-delay-${i}`} key={s.label}>
                 <Counter target={s.num} suffix={s.suffix}/>
                 <div className="stat-label">{s.label}</div>

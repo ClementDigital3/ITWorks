@@ -8,9 +8,9 @@
 .projects-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
 .project-card{background:var(--black3);position:relative;overflow:hidden;cursor:pointer;transition:transform var(--transition)}
 .project-card:hover{transform:scale(1.01);z-index:2}
-.project-card.large{grid-column:span 2}
+.project-card.large, .reveal.large{grid-column:span 2}
 .project-img{aspect-ratio:4/3;overflow:hidden;position:relative;background:var(--black4)}
-.project-card.large .project-img{aspect-ratio:16/7}
+.project-card.large .project-img, .reveal.large .project-img{aspect-ratio:16/7}
 .project-placeholder{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:32px;position:relative}
 .proj-rings{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
 .proj-ring{position:absolute;border-radius:50%;border:1px solid rgba(43,176,74,0.08);animation:projRing 3s ease-out infinite}
@@ -50,12 +50,12 @@
 @media(max-width:1024px){
   .projects-filter,.projects-section,.stats-strip{padding-left:28px;padding-right:28px}
   .projects-grid{grid-template-columns:1fr 1fr}
-  .project-card.large{grid-column:span 2}
+  .project-card.large, .reveal.large{grid-column:span 2}
   .stats-strip-inner{grid-template-columns:1fr 1fr}
 }
 @media(max-width:640px){
   .projects-grid{grid-template-columns:1fr}
-  .project-card.large{grid-column:span 1}
-  .project-card.large .project-img{aspect-ratio:4/3}
+  .project-card.large, .reveal.large{grid-column:span 1}
+  .project-card.large .project-img, .reveal.large .project-img{aspect-ratio:4/3}
   .stats-strip-inner{grid-template-columns:1fr 1fr}
 }
