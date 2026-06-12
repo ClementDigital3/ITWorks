@@ -54,22 +54,24 @@ nav.scrolled{background:rgba(5,5,5,0.97);box-shadow:0 4px 40px rgba(0,0,0,0.6)}
 .mobile-nav{
   position:fixed;inset:0;background:rgba(5,5,5,0.98);
   backdrop-filter:blur(30px);z-index:999;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:32px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;
   opacity:0;pointer-events:none;transition:opacity 0.4s;
 }
 .mobile-nav.open{opacity:1;pointer-events:all}
 .mobile-nav a{
-  font-family:var(--font-display);font-size:42px;font-weight:800;
+  font-family:var(--font-display);font-size:26px;font-weight:800;
   text-transform:uppercase;color:var(--grey2);letter-spacing:2px;
   transition:color 0.3s,transform 0.3s;border-bottom:none;padding-bottom:0;
 }
-.mobile-nav a:hover,.mobile-nav a.active{color:var(--green);transform:translateX(8px)}
+.mobile-nav a:hover:not(.mob-cta),.mobile-nav a.active:not(.mob-cta){color:var(--green);transform:translateX(8px)}
 .mobile-nav .mob-cta{
-  margin-top:16px;padding:14px 40px;background:var(--green);
-  color:var(--white);font-size:20px;font-weight:700;
+  margin-top:12px;padding:12px 36px;background:var(--green);
+  color:var(--white);font-size:16px;font-weight:700;
   text-transform:uppercase;letter-spacing:2px;border-radius:var(--radius);
+  transition:background var(--transition),transform var(--transition);
 }
-.mobile-nav .mob-cta:hover{transform:none;color:var(--white)}
+.mobile-nav .mob-cta:hover{transform:translateY(-2px);color:var(--white);background:var(--green2)}
+.mobile-nav .mob-cta.active{background:var(--green);color:var(--white)}
 
 @media(max-width:1024px){
   nav{padding:0 28px}

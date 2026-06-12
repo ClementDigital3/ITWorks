@@ -24,6 +24,8 @@ app.use('/api/contact', contactLimiter, require('./routes/contact'))
 app.use('/api/projects', require('./routes/projects'))
 app.use('/api/services', require('./routes/services'))
 app.use('/api/stats', require('./routes/stats'))
+app.use('/api/auth', require('./routes/auth'))
+app.use('/api/about', require('./routes/about'))
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'OK', time: new Date() }))

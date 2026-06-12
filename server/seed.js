@@ -3,6 +3,7 @@ const dotenv = require('dotenv')
 const Service = require('./models/Service')
 const Project = require('./models/Project')
 const Stats = require('./models/Stats')
+const About = require('./models/About')
 
 dotenv.config()
 
@@ -14,17 +15,20 @@ const services = [
     tag: 'Home & Residential',
     description: 'Patchy internet and dead zones end here. We conduct a full site survey before every job, mapping your layout to determine exactly where routers and access points should be placed for complete, consistent coverage.',
     features: [
+      'Installation Fee: KES 1,500 only',
+      'Unlimited internet with no data caps',
+      'No contract — pay monthly and cancel anytime',
+      'Localized support (24/7 client support team)',
       'Full site survey and signal mapping',
-      'Professional router and access point placement',
-      'Cable routing and concealment',
-      'Password security, guest network, and parental controls',
-      'Works with all Kenyan ISPs — Safaricom, Zuku, Faiba',
-      '30-day post-installation support guarantee'
+      'Professional router & access point setup',
+      'Works with all Kenyan ISPs — Safaricom, Zuku, Faiba'
     ],
     tiers: [
-      { name: 'Basic', label: 'Basic' },
-      { name: 'Standard', label: 'Standard' },
-      { name: 'Premium', label: 'Premium' }
+      { name: 'Plan 1,500', label: 'Plan 1,500 (Up to 5Mbps)' },
+      { name: 'Plan 2,000', label: 'Plan 2,000 (Up to 10Mbps)' },
+      { name: 'Plan 2,500', label: 'Plan 2,500 (Up to 15Mbps)' },
+      { name: 'Plan 3,000', label: 'Plan 3,000 (Up to 20Mbps)' },
+      { name: 'Plan 4,000', label: 'Plan 4,000 (Up to 40Mbps)' }
     ],
     icon: 'wifi',
     order: 1,
@@ -248,6 +252,32 @@ const stats = {
   satisfaction: 98
 }
 
+const aboutData = {
+  storyTitle: 'The Team Behind the Connection',
+  storyParagraphs: [
+    'ITWORKS Technologies Limited was founded with a clear mission: to bring reliable, professional, and affordable connectivity to homes and businesses in Eldoret and across Kenya. We saw a gap — a market full of ISPs, but not enough companies focused on the installation, configuration, and ongoing support that actually makes internet work well.',
+    'From our base in Eldoret, we\'ve grown to serve clients across the North Rift. Every job, regardless of size, gets the same level of attention, professionalism, and quality workmanship.',
+    'We\'re a team of certified network engineers and IT professionals who take pride in clean installations, clear communication, and results that last.'
+  ],
+  missionTitle: 'Our Mission',
+  missionStatement: 'To connect every home, office, and institution in Kenya with reliable, fast, and affordable internet infrastructure.',
+  missionSub: 'We believe that fast, reliable internet is not a luxury — it\'s infrastructure. Every student, business owner, hotel guest, and family deserves a connection that just works.',
+  values: [
+    { num: '01', title: 'Reliability', desc: 'We show up when we say we will. We fix what we say we\'ll fix. Your uptime is our responsibility — backed by a 30-day workmanship guarantee.' },
+    { num: '02', title: 'Professionalism', desc: 'Clean cable runs, clear documentation, on-time arrivals, and honest pricing. We treat every client\'s home or business with the same respect we\'d want for our own.' },
+    { num: '03', title: 'Innovation', desc: 'From MikroTik and Ubiquiti to M-Pesa billing integrations and modern IP camera systems — we bring the latest solutions to the Kenyan market.' }
+  ],
+  team: [
+    { initials: 'JK', name: 'John Kibet', role: 'Founder & CEO', bio: 'Network engineer with 8+ years in ICT infrastructure across Kenya and East Africa.', color: 'av-green' },
+    { initials: 'SM', name: 'Sarah Mutai', role: 'Head of Operations', bio: 'Ensures every project is delivered on time, within scope, and to the highest standard.', color: 'av-orange' },
+    { initials: 'DK', name: 'David Korir', role: 'Senior Network Engineer', bio: 'Specialist in enterprise networking, MikroTik, and hotspot billing systems.', color: 'av-blue' },
+    { initials: 'AJ', name: 'Alice Jepkoech', role: 'Client Support Lead', bio: 'Your first point of contact — responsive, knowledgeable, and always solutions-focused.', color: 'av-teal' }
+  ],
+  areas: ['Eldoret (HQ)', 'Nakuru', 'Kisumu', 'Kitale', 'Iten', 'Kapsabet', 'Nandi Hills', 'Uasin Gishu', 'Trans Nzoia', 'Nairobi (Enterprise)'],
+  areaTitle: 'Eldoret &<br/>Beyond<br/><span>Kenya</span>',
+  areaText: 'Our base is Eldoret — but our clients aren\'t limited to the city. We regularly serve businesses, schools, hotels, and homes across the North Rift region and Western Kenya.'
+}
+
 async function seedDatabase() {
   try {
     const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/itworks'
@@ -257,10 +287,11 @@ async function seedDatabase() {
     console.log('✓ Successfully connected to MongoDB.')
 
     // 1. Clear Existing Data
-    console.log('Clearing old services, projects, and stats...')
+    console.log('Clearing old services, projects, stats, and about...')
     await Service.deleteMany({})
     await Project.deleteMany({})
     await Stats.deleteMany({})
+    await About.deleteMany({})
     console.log('✓ Cleared old data.')
 
     // 2. Insert Services
@@ -277,6 +308,11 @@ async function seedDatabase() {
     console.log('Seeding website stats...')
     await Stats.create(stats)
     console.log('✓ Stats seeded successfully.')
+
+    // 5. Insert About Content
+    console.log('Seeding website about content...')
+    await About.create(aboutData)
+    console.log('✓ About content seeded successfully.')
 
     console.log('✓ Database seeding complete!')
     process.exit(0)

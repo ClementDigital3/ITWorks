@@ -3,13 +3,19 @@ import { Link } from 'react-router-dom'
 import './Admin.css'
 
 export default function Admin() {
-  const [activeTab, setActiveTab] = useState('projects') // 'projects' | 'services'
+  const [token, setToken] = useState(localStorage.getItem('adminToken') || '')
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [authLoading, setAuthLoading] = useState(false)
+  const [authError, setAuthError] = useState('')
+
+  const [activeTab, setActiveTab] = useState('projects') // 'projects' | 'services' | 'about'
   const [projects, setProjects] = useState([])
   const [services, setServices] = useState([])
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState(null) // { text: string, type: 'success' | 'error' }
 
-  // Form State
+  // Form State for Projects and Services
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingId, setEditingId] = useState(null) // null for create, id for update
 
@@ -39,6 +45,21 @@ export default function Admin() {
     comingSoon: false
   })
 
+  // About Page Form Fields
+  const [aboutForm, setAboutForm] = useState({
+    storyTitle: '',
+    storyParagraphs: '',
+    missionTitle: '',
+    missionStatement: '',
+    missionSub: '',
+    values: [],
+    team: [],
+    areas: '',
+    areaTitle: '',
+    areaText: ''
+  })
+  const [aboutSaving, setAboutSaving] = useState(false)
+
   // Fetch Data
   const fetchData = async () => {
     setLoading(true)
@@ -54,6 +75,23 @@ export default function Admin() {
       } else {
         setServices(servData)
       }
+
+      const aboutRes = await fetch('/api/about')
+      const aboutData = await aboutRes.json()
+      if (aboutData) {
+        setAboutForm({
+          storyTitle: aboutData.storyTitle || '',
+          storyParagraphs: Array.isArray(aboutData.storyParagraphs) ? aboutData.storyParagraphs.join('\n\n') : '',
+          missionTitle: aboutData.missionTitle || '',
+          missionStatement: aboutData.missionStatement || '',
+          missionSub: aboutData.missionSub || '',
+          values: aboutData.values || [],
+          team: aboutData.team || [],
+          areas: Array.isArray(aboutData.areas) ? aboutData.areas.join(', ') : '',
+          areaTitle: aboutData.areaTitle || '',
+          areaText: aboutData.areaText || ''
+        })
+      }
     } catch (err) {
       showMsg('Failed to load database items.', 'error')
     } finally {
@@ -62,11 +100,46 @@ export default function Admin() {
   }
 
   useEffect(() => {
-    fetchData()
-  }, [])
+    if (token) {
+      fetchData()
+    }
+  }, [token])
+
+  const handleLoginSubmit = async (e) => {
+    e.preventDefault()
+    setAuthLoading(true)
+    setAuthError('')
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        localStorage.setItem('adminToken', data.token)
+        setToken(data.token)
+        setUsername('')
+        setPassword('')
+      } else {
+        setAuthError(data.message || 'Invalid username or password')
+      }
+    } catch (err) {
+      setAuthError('Connection error. Server may be offline.')
+    } finally {
+      setAuthLoading(false)
+    }
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem('adminToken')
+    setToken('')
+    showMsg('Signed out successfully.')
+  }
 
   const showMsg = (text, type = 'success') => {
     setMessage({ text, type })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
     setTimeout(() => setMessage(null), 4000)
   }
 
@@ -134,7 +207,20 @@ export default function Admin() {
     if (!window.confirm('Are you sure you want to delete this item?')) return
     try {
       const url = activeTab === 'projects' ? `/api/projects/${id}` : `/api/services/${id}`
-      const res = await fetch(url, { method: 'DELETE' })
+      const res = await fetch(url, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      
+      if (res.status === 401) {
+        localStorage.removeItem('adminToken')
+        setToken('')
+        showMsg('Session expired. Please log in again.', 'error')
+        return
+      }
+
       const data = await res.json()
 
       if (res.ok && (data.success || data.success === undefined)) {
@@ -148,55 +234,216 @@ export default function Admin() {
     }
   }
 
-  // Form Submit Handler
+  // Handle Projects & Services submit
   const handleFormSubmit = async (e) => {
     e.preventDefault()
     try {
-      let url = ''
-      let method = 'POST'
-      let body = {}
-
+      const url = activeTab === 'projects'
+        ? (editingId ? `/api/projects/${editingId}` : '/api/projects')
+        : (editingId ? `/api/services/${editingId}` : '/api/services')
+      
+      const method = editingId ? 'PUT' : 'POST'
+      
+      let payload = {}
       if (activeTab === 'projects') {
-        url = editingId ? `/api/projects/${editingId}` : '/api/projects'
-        method = editingId ? 'PUT' : 'POST'
-        body = {
+        payload = {
           ...projectForm,
           tags: projectForm.tags.split(',').map(t => t.trim()).filter(Boolean)
         }
       } else {
-        url = editingId ? `/api/services/${editingId}` : '/api/services'
-        method = editingId ? 'PUT' : 'POST'
-        // Format tiers: comma list string to [{name, label}]
-        const formattedTiers = serviceForm.tiers
-          .split(',')
-          .map(t => t.trim())
-          .filter(Boolean)
-          .map(name => ({ name, label: name }))
-
-        body = {
+        payload = {
           ...serviceForm,
           features: serviceForm.features.split('\n').map(f => f.trim()).filter(Boolean),
-          tiers: formattedTiers
+          tiers: serviceForm.tiers.split(',').map(t => ({ name: t.trim() })).filter(t => t.name)
         }
       }
 
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
       })
+
+      if (res.status === 401) {
+        localStorage.removeItem('adminToken')
+        setToken('')
+        setIsFormOpen(false)
+        showMsg('Session expired. Please log in again.', 'error')
+        return
+      }
+
       const data = await res.json()
 
       if (res.ok && (data.success || data.success === undefined)) {
-        showMsg(editingId ? 'Item updated successfully!' : 'Item created successfully!')
+        showMsg(`Item ${editingId ? 'updated' : 'created'} successfully!`)
         setIsFormOpen(false)
         fetchData()
       } else {
         showMsg(data.message || data.error || 'Operation failed.', 'error')
       }
     } catch (err) {
-      showMsg('Server response error.', 'error')
+      showMsg('Network error occurred.', 'error')
     }
+  }
+
+  // About Page Change Handlers
+  const handleAboutValueChange = (idx, field, val) => {
+    setAboutForm(prev => {
+      const updated = [...prev.values]
+      updated[idx] = { ...updated[idx], [field]: val }
+      return { ...prev, values: updated }
+    })
+  }
+
+  const handleAboutValueAdd = () => {
+    setAboutForm(prev => {
+      const nextNum = String(prev.values.length + 1).padStart(2, '0')
+      return {
+        ...prev,
+        values: [...prev.values, { num: nextNum, title: '', desc: '' }]
+      }
+    })
+  }
+
+  const handleAboutValueDelete = (idx) => {
+    setAboutForm(prev => ({
+      ...prev,
+      values: prev.values.filter((_, i) => i !== idx)
+    }))
+  }
+
+  const handleAboutTeamChange = (idx, field, val) => {
+    setAboutForm(prev => {
+      const updated = [...prev.team]
+      updated[idx] = { ...updated[idx], [field]: val }
+      return { ...prev, team: updated }
+    })
+  }
+
+  const handleAboutTeamAdd = () => {
+    setAboutForm(prev => ({
+      ...prev,
+      team: [...prev.team, { name: '', role: '', bio: '', initials: '', color: 'av-green' }]
+    }))
+  }
+
+  const handleAboutTeamDelete = (idx) => {
+    setAboutForm(prev => ({
+      ...prev,
+      team: prev.team.filter((_, i) => i !== idx)
+    }))
+  }
+
+  const handleAboutSubmit = async (e) => {
+    e.preventDefault()
+    setAboutSaving(true)
+    try {
+      const payload = {
+        storyTitle: aboutForm.storyTitle,
+        storyParagraphs: aboutForm.storyParagraphs.split('\n\n').map(p => p.trim()).filter(Boolean),
+        missionTitle: aboutForm.missionTitle,
+        missionStatement: aboutForm.missionStatement,
+        missionSub: aboutForm.missionSub,
+        values: aboutForm.values,
+        team: aboutForm.team.map(m => ({
+          ...m,
+          initials: m.initials || m.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+        })),
+        areas: aboutForm.areas.split(',').map(a => a.trim()).filter(Boolean),
+        areaTitle: aboutForm.areaTitle,
+        areaText: aboutForm.areaText
+      }
+
+      const res = await fetch('/api/about', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      })
+
+      if (res.status === 401) {
+        localStorage.removeItem('adminToken')
+        setToken('')
+        showMsg('Session expired. Please log in again.', 'error')
+        return
+      }
+
+      const data = await res.json()
+      if (res.ok) {
+        showMsg('About page content saved successfully!')
+        // Reload to sync formatted fields
+        fetchData()
+      } else {
+        showMsg(data.error || 'Failed to save About page content.', 'error')
+      }
+    } catch (err) {
+      showMsg('Network error occurred.', 'error')
+    } finally {
+      setAboutSaving(false)
+    }
+  }
+
+  if (!token) {
+    return (
+      <main className="admin-page login-page-wrap">
+        <section className="page-hero" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
+          <div className="page-hero-bg" />
+          <div className="hero-grid" />
+          <div className="login-card">
+            <div className="login-header">
+              <div className="nav-logo" style={{ justifyContent: 'center', marginBottom: '16px' }}>
+                <div className="nav-logo-text" style={{ alignItems: 'center' }}>
+                  <span style={{ fontSize: '24px', fontWeight: '900', letterSpacing: '1px', color: '#fff' }}>ITWORKS</span>
+                  <span style={{ fontSize: '10px', fontWeight: '600', letterSpacing: '3px', color: 'var(--green)', textTransform: 'uppercase' }}>Management Console</span>
+                </div>
+              </div>
+              <h2>Dashboard Access</h2>
+              <p>Please enter administrative credentials to access the console.</p>
+            </div>
+            
+            {authError && (
+              <div className="admin-alert error" style={{ marginBottom: '20px', borderRadius: '8px' }}>
+                {authError}
+              </div>
+            )}
+            
+            <form onSubmit={handleLoginSubmit} className="login-form">
+              <div className="form-group">
+                <label>Username</label>
+                <input 
+                  type="text" 
+                  required 
+                  value={username} 
+                  onChange={e => setUsername(e.target.value)} 
+                  placeholder="Enter username"
+                />
+              </div>
+              <div className="form-group" style={{ marginTop: '16px' }}>
+                <label>Password</label>
+                <input 
+                  type="password" 
+                  required 
+                  value={password} 
+                  onChange={e => setPassword(e.target.value)} 
+                  placeholder="Enter password"
+                />
+              </div>
+              <button type="submit" className="btn-primary login-btn" disabled={authLoading} style={{ width: '100%', marginTop: '24px', justifyContent: 'center' }}>
+                {authLoading ? 'Authenticating...' : 'Sign In'}
+              </button>
+              <div style={{ textAlign: 'center', marginTop: '20px' }}>
+                <Link to="/" className="btn-ghost" style={{ fontSize: '13px', textDecoration: 'none' }}>Return to Website</Link>
+              </div>
+            </form>
+          </div>
+        </section>
+      </main>
+    )
   }
 
   return (
@@ -205,14 +452,19 @@ export default function Admin() {
         <div className="page-hero-bg" />
         <div className="hero-grid" />
         <div className="page-hero-inner">
-          <div className="breadcrumb">
-            <Link to="/">Home</Link>
-            <span>/</span>
-            <span style={{ color: '#fff' }}>Admin Dashboard</span>
+          <div className="breadcrumb-wrapper" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+            <div className="breadcrumb" style={{ marginBottom: 0 }}>
+              <Link to="/">Home</Link>
+              <span>/</span>
+              <span style={{ color: '#fff' }}>Admin Dashboard</span>
+            </div>
+            <button className="btn-logout" onClick={handleLogout}>
+              Sign Out
+            </button>
           </div>
           <div className="section-label">Management console</div>
           <h1>System<br /><span>Dashboard</span></h1>
-          <p>Create, update, and manage the active services and projects presented on the public ITWORKS website.</p>
+          <p>Create, update, and manage the active services, projects, and custom about sections presented on the public ITWORKS website.</p>
         </div>
       </section>
 
@@ -230,10 +482,19 @@ export default function Admin() {
           >
             Services ({services.length})
           </button>
+          <button 
+            className={`tab-btn ${activeTab === 'about' ? 'active' : ''}`} 
+            onClick={() => { setActiveTab('about'); setIsFormOpen(false); }}
+          >
+            About Page Content
+          </button>
         </div>
-        <button className="btn-primary add-new-btn" onClick={handleAddClick}>
-          + Add New {activeTab === 'projects' ? 'Project' : 'Service'}
-        </button>
+        
+        {activeTab !== 'about' && (
+          <button className="btn-primary add-new-btn" onClick={handleAddClick}>
+            + Add New {activeTab === 'projects' ? 'Project' : 'Service'}
+          </button>
+        )}
       </div>
 
       {message && (
@@ -248,6 +509,249 @@ export default function Admin() {
             <div className="loading-spinner" />
             <p>Loading database items...</p>
           </div>
+        ) : activeTab === 'about' ? (
+          <form onSubmit={handleAboutSubmit} className="about-editor-form">
+            
+            {/* STORY CARD */}
+            <div className="about-card">
+              <div className="about-card-title">Who We Are (Story)</div>
+              <div className="form-group">
+                <label>Story Section Heading</label>
+                <input 
+                  type="text" 
+                  required
+                  value={aboutForm.storyTitle} 
+                  onChange={e => setAboutForm({ ...aboutForm, storyTitle: e.target.value })}
+                  placeholder="e.g. The Team Behind the Connection (HTML allowed)"
+                />
+              </div>
+              <div className="form-group" style={{ marginTop: '16px' }}>
+                <label>Story Paragraphs (Separate each paragraph with a blank line)</label>
+                <textarea 
+                  rows="6"
+                  required
+                  value={aboutForm.storyParagraphs} 
+                  onChange={e => setAboutForm({ ...aboutForm, storyParagraphs: e.target.value })}
+                  placeholder="ITWORKS Technologies Limited was founded...&#10;&#10;From our base in Eldoret..."
+                />
+              </div>
+            </div>
+
+            {/* MISSION CARD */}
+            <div className="about-card">
+              <div className="about-card-title">Our Mission</div>
+              <div className="form-group">
+                <label>Mission Section Label</label>
+                <input 
+                  type="text" 
+                  required
+                  value={aboutForm.missionTitle} 
+                  onChange={e => setAboutForm({ ...aboutForm, missionTitle: e.target.value })}
+                  placeholder="e.g. Our Mission"
+                />
+              </div>
+              <div className="form-group" style={{ marginTop: '16px' }}>
+                <label>Mission Statement (Main Highlight Text)</label>
+                <textarea 
+                  rows="3"
+                  required
+                  value={aboutForm.missionStatement} 
+                  onChange={e => setAboutForm({ ...aboutForm, missionStatement: e.target.value })}
+                  placeholder="To connect every home, office, and institution..."
+                />
+              </div>
+              <div className="form-group" style={{ marginTop: '16px' }}>
+                <label>Mission Sub-text (Supporting description)</label>
+                <textarea 
+                  rows="3"
+                  required
+                  value={aboutForm.missionSub} 
+                  onChange={e => setAboutForm({ ...aboutForm, missionSub: e.target.value })}
+                  placeholder="We believe that fast, reliable internet is not a luxury..."
+                />
+              </div>
+            </div>
+
+            {/* SERVICE AREA CARD */}
+            <div className="about-card">
+              <div className="about-card-title">Where We Serve</div>
+              <div className="form-group">
+                <label>Where We Serve Section Heading</label>
+                <input 
+                  type="text" 
+                  required
+                  value={aboutForm.areaTitle} 
+                  onChange={e => setAboutForm({ ...aboutForm, areaTitle: e.target.value })}
+                  placeholder="e.g. Eldoret & Beyond (HTML allowed)"
+                />
+              </div>
+              <div className="form-group" style={{ marginTop: '16px' }}>
+                <label>Section Description Text</label>
+                <textarea 
+                  rows="3"
+                  required
+                  value={aboutForm.areaText} 
+                  onChange={e => setAboutForm({ ...aboutForm, areaText: e.target.value })}
+                  placeholder="Our base is Eldoret — but our clients aren't limited to the city..."
+                />
+              </div>
+              <div className="form-group" style={{ marginTop: '16px' }}>
+                <label>Served Towns / Regions (Comma Separated)</label>
+                <input 
+                  type="text" 
+                  required
+                  value={aboutForm.areas} 
+                  onChange={e => setAboutForm({ ...aboutForm, areas: e.target.value })}
+                  placeholder="e.g. Eldoret (HQ), Nakuru, Kisumu"
+                />
+              </div>
+            </div>
+
+            {/* VALUES CARD */}
+            <div className="about-card">
+              <div className="about-card-title">
+                <span>What We Stand For (Values)</span>
+                <button type="button" className="btn-add-item" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={handleAboutValueAdd}>
+                  + Add Value
+                </button>
+              </div>
+              <div className="about-list">
+                {aboutForm.values.map((v, i) => (
+                  <div key={i} className="about-list-item">
+                    <div className="about-item-header">
+                      <span className="about-item-title">Value Item #{i + 1}</span>
+                      <button type="button" className="btn-remove-item" onClick={() => handleAboutValueDelete(i)}>
+                        Remove
+                      </button>
+                    </div>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Display Number</label>
+                        <input 
+                          type="text" 
+                          required
+                          value={v.num} 
+                          onChange={e => handleAboutValueChange(i, 'num', e.target.value)}
+                          placeholder="e.g. 01"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Value Title</label>
+                        <input 
+                          type="text" 
+                          required
+                          value={v.title} 
+                          onChange={e => handleAboutValueChange(i, 'title', e.target.value)}
+                          placeholder="e.g. Reliability"
+                        />
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <label>Description</label>
+                      <textarea 
+                        rows="2"
+                        required
+                        value={v.desc} 
+                        onChange={e => handleAboutValueChange(i, 'desc', e.target.value)}
+                        placeholder="Explain what this value means in practice..."
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {aboutForm.values.length === 0 && (
+                <p style={{ color: 'var(--grey2)', textAlign: 'center', margin: '20px 0' }}>No values defined. Click "+ Add Value" to add one.</p>
+              )}
+            </div>
+
+            {/* TEAM CARD */}
+            <div className="about-card">
+              <div className="about-card-title">
+                <span>The People (Team Members)</span>
+                <button type="button" className="btn-add-item" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={handleAboutTeamAdd}>
+                  + Add Member
+                </button>
+              </div>
+              <div className="about-list">
+                {aboutForm.team.map((m, i) => (
+                  <div key={i} className="about-list-item">
+                    <div className="about-item-header">
+                      <span className="about-item-title">Team Member #{i + 1}</span>
+                      <button type="button" className="btn-remove-item" onClick={() => handleAboutTeamDelete(i)}>
+                        Remove
+                      </button>
+                    </div>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Member Name</label>
+                        <input 
+                          type="text" 
+                          required
+                          value={m.name} 
+                          onChange={e => handleAboutTeamChange(i, 'name', e.target.value)}
+                          placeholder="e.g. John Kibet"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Role / Job Title</label>
+                        <input 
+                          type="text" 
+                          required
+                          value={m.role} 
+                          onChange={e => handleAboutTeamChange(i, 'role', e.target.value)}
+                          placeholder="e.g. Founder & CEO"
+                        />
+                      </div>
+                    </div>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Initials (Leave empty to auto-generate)</label>
+                        <input 
+                          type="text" 
+                          value={m.initials} 
+                          onChange={e => handleAboutTeamChange(i, 'initials', e.target.value)}
+                          placeholder="e.g. JK"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Avatar Color Theme</label>
+                        <select 
+                          value={m.color} 
+                          onChange={e => handleAboutTeamChange(i, 'color', e.target.value)}
+                        >
+                          <option value="av-green">Green</option>
+                          <option value="av-orange">Orange</option>
+                          <option value="av-blue">Blue</option>
+                          <option value="av-teal">Teal</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <label>Short Bio</label>
+                      <textarea 
+                        rows="2"
+                        required
+                        value={m.bio} 
+                        onChange={e => handleAboutTeamChange(i, 'bio', e.target.value)}
+                        placeholder="e.g. Specialist in enterprise networking..."
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {aboutForm.team.length === 0 && (
+                <p style={{ color: 'var(--grey2)', textAlign: 'center', margin: '20px 0' }}>No team members defined. Click "+ Add Member" to add one.</p>
+              )}
+            </div>
+
+            {/* SAVE BAR */}
+            <div className="about-save-bar">
+              <button type="submit" className="btn-primary btn-save-about" disabled={aboutSaving}>
+                {aboutSaving ? 'Saving Changes...' : 'Save About Page Content'}
+              </button>
+            </div>
+
+          </form>
         ) : (
           <div className="table-responsive">
             <table className="admin-table">
@@ -324,21 +828,13 @@ export default function Admin() {
                     </tr>
                   ))
                 )}
-                {((activeTab === 'projects' && projects.length === 0) || 
-                  (activeTab === 'services' && services.length === 0)) && (
-                  <tr>
-                    <td colSpan="6" className="text-center py-8 text-grey">
-                      No items found. Click "+ Add New" to create one.
-                    </td>
-                  </tr>
-                )}
               </tbody>
             </table>
           </div>
         )}
       </section>
 
-      {/* Modal Form */}
+      {/* Modal Form for Projects & Services */}
       {isFormOpen && (
         <div className="modal-backdrop" onClick={() => setIsFormOpen(false)}>
           <div className="modal-container" onClick={e => e.stopPropagation()}>
