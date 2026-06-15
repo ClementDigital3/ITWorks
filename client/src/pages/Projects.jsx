@@ -58,7 +58,8 @@ function ProjectIcon({ cat }) {
 export default function Projects() {
   const [filter, setFilter] = useState('All Projects')
   const [lightbox, setLightbox] = useState(null)
-  const [projects, setProjects] = useState(PROJECTS)
+  const [projects, setProjects] = useState([])
+  const [loading, setLoading] = useState(true)
   const revealRef = useReveal([projects])
 
   useEffect(() => {
@@ -81,15 +82,64 @@ export default function Projects() {
           }))
           if (normalized.length > 0) {
             setProjects(normalized)
+          } else {
+            setProjects(PROJECTS)
           }
+        } else {
+          setProjects(PROJECTS)
         }
       })
-      .catch(err => console.log('Using local projects fallback:', err.message))
+      .catch(err => {
+        console.log('Using local projects fallback:', err.message)
+        setProjects(PROJECTS)
+      })
+      .finally(() => {
+        setLoading(false)
+      })
   }, [])
+
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedLocation, setSelectedLocation] = useState('all')
+
+  const getTown = (loc) => {
+    if (!loc) return 'Unknown'
+    const l = loc.toLowerCase()
+    if (l.includes('eldoret')) return 'Eldoret'
+    if (l.includes('kitale')) return 'Kitale'
+    if (l.includes('nandi')) return 'Nandi Hills'
+    if (l.includes('nakuru')) return 'Nakuru'
+    if (l.includes('kisumu')) return 'Kisumu'
+    if (l.includes('nairobi')) return 'Nairobi'
+    return loc.trim().split(',')[0].replace(/\b\w/g, c => c.toUpperCase())
+  }
 
   const activeCategories = ['wifi', 'networks']
   const activeProjects = projects.filter(p => activeCategories.includes(p.category))
-  const filtered = filter === 'All Projects' ? activeProjects : activeProjects.filter(p => p.category === FILTER_MAP[filter])
+
+  const uniqueLocations = Array.from(
+    new Set(
+      activeProjects
+        .map(p => getTown(p.location))
+        .filter(Boolean)
+    )
+  ).sort()
+
+  const filtered = activeProjects.filter(p => {
+    const matchesCategory = filter === 'All Projects' || p.category === FILTER_MAP[filter]
+    
+    const town = getTown(p.location)
+    const matchesLocation = selectedLocation === 'all' || town === selectedLocation
+    
+    const query = searchQuery.toLowerCase().trim()
+    const matchesSearch = !query ||
+      p.title.toLowerCase().includes(query) ||
+      (p.desc && p.desc.toLowerCase().includes(query)) ||
+      p.location.toLowerCase().includes(query) ||
+      (p.tags && p.tags.some(t => t.toLowerCase().includes(query)))
+
+    return matchesCategory && matchesLocation && matchesSearch
+  })
+
   const lb = projects.find(p => p.id === lightbox)
 
   return (
@@ -104,39 +154,104 @@ export default function Projects() {
         </div>
       </section>
 
-      <div className="projects-filter">
+      <div className="projects-filter-bar">
         <div className="filter-inner">
-          {FILTERS.map(f => (
-            <button key={f} className={`filter-btn ${filter === f ? 'active' : ''}`} onClick={() => setFilter(f)}>{f}</button>
-          ))}
+          <div className="filter-categories">
+            {FILTERS.map(f => (
+              <button 
+                key={f} 
+                className={`filter-btn ${filter === f ? 'active' : ''}`} 
+                onClick={() => setFilter(f)}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+
+          <div className="filter-controls">
+            <div className="search-box">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input 
+                type="text" 
+                placeholder="Search projects..." 
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <button className="clear-search-btn" onClick={() => setSearchQuery('')}>
+                  &times;
+                </button>
+              )}
+            </div>
+
+            <div className="location-select-wrapper">
+              <select 
+                value={selectedLocation} 
+                onChange={e => setSelectedLocation(e.target.value)}
+                className="location-select"
+              >
+                <option value="all">All Locations</option>
+                {uniqueLocations.map(loc => (
+                  <option key={loc} value={loc}>{loc}</option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
       </div>
 
       <section className="projects-section">
         <div className="projects-grid">
-          {filtered.map((p, i) => (
-            <div key={p.id} className={`reveal ${p.large ? 'large' : ''}`}>
-              <div className="project-card" onClick={() => setLightbox(p.id)}>
-                <div className="project-img">
-                  <div className="project-placeholder">
-                    <div className="proj-rings"><div className="proj-ring"/><div className="proj-ring"/><div className="proj-ring"/></div>
-                    <ProjectIcon cat={p.category}/>
-                    <div className="proj-placeholder-label">{p.category.toUpperCase()}</div>
-                  </div>
-                  <div className="project-overlay"><span>Click to View Details →</span></div>
-                </div>
-                <div className="project-meta">
-                  <div className="proj-cat">{p.category.charAt(0).toUpperCase() + p.category.slice(1)}</div>
-                  <div className="proj-title">{p.title}</div>
-                  <div className="proj-location">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                    {p.location}
-                  </div>
-                  <span className="proj-tag">{p.tag}</span>
+          {loading ? (
+            [1, 2, 3, 4].map(i => (
+              <div key={i} className={`project-skeleton-card ${i === 1 || i === 4 ? 'large' : ''}`}>
+                <div className="project-img-skeleton skeleton-pulse" />
+                <div className="project-meta-skeleton">
+                  <div className="proj-cat-skeleton skeleton-pulse" />
+                  <div className="proj-title-skeleton skeleton-pulse" />
+                  <div className="proj-location-skeleton skeleton-pulse" />
+                  <div className="proj-tag-skeleton skeleton-pulse" />
                 </div>
               </div>
+            ))
+          ) : filtered.length > 0 ? (
+            filtered.map((p, i) => (
+              <div 
+                key={`${p.id}-${filter}-${selectedLocation}-${searchQuery ? 'search' : 'none'}`} 
+                className={`reveal project-card-animate ${p.large ? 'large' : ''}`}
+                style={{ animationDelay: `${i * 60}ms` }}
+              >
+                <div className="project-card" onClick={() => setLightbox(p.id)}>
+                  <div className="project-img">
+                    <div className="project-placeholder">
+                      <div className="proj-rings"><div className="proj-ring"/><div className="proj-ring"/><div className="proj-ring"/></div>
+                      <ProjectIcon cat={p.category}/>
+                      <div className="proj-placeholder-label">{p.category.toUpperCase()}</div>
+                    </div>
+                    <div className="project-overlay"><span>Click to View Details →</span></div>
+                  </div>
+                  <div className="project-meta">
+                    <div className="proj-cat">{p.category.charAt(0).toUpperCase() + p.category.slice(1)}</div>
+                    <div className="proj-title">{p.title}</div>
+                    <div className="proj-location">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                      {p.location}
+                    </div>
+                    <span className="proj-tag">{p.tag}</span>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="no-projects-found" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '80px 24px' }}>
+              <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔍</div>
+              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '20px', textTransform: 'uppercase', color: 'var(--white)', marginBottom: '8px' }}>No Projects Found</h3>
+              <p style={{ color: 'var(--grey2)', maxWidth: '400px', margin: '0 auto', fontSize: '14px' }}>We couldn't find any projects matching "{searchQuery}" in {selectedLocation === 'all' ? 'any location' : selectedLocation}. Try adjusting your filters.</p>
             </div>
-          ))}
+          )}
         </div>
       </section>
 

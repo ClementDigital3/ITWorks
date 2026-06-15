@@ -215,3 +215,19 @@ body::before{
   vertical-align: middle;
   white-space: nowrap;
 }
+
+/* ── SKELETON LOADER ANIMATIONS ────────────────────────────────────────── */
+.skeleton-pulse {
+  background: linear-gradient(90deg, #222222 25%, #333333 50%, #222222 75%);
+  background-size: 200% 100%;
+  animation: skeletonLoading 1.5s infinite ease-in-out;
+}
+
+@keyframes skeletonLoading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}

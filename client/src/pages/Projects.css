@@ -1,9 +1,198 @@
-.projects-filter{padding:0 48px;background:var(--black2);position:sticky;top:var(--nav-h);z-index:100;border-bottom:1px solid var(--black4)}
-.filter-inner{display:flex;align-items:center;gap:8px;padding:16px 0;overflow-x:auto;scrollbar-width:none}
-.filter-inner::-webkit-scrollbar{display:none}
-.filter-btn{padding:9px 20px;background:transparent;border:1px solid var(--black5);color:var(--grey3);font-size:13px;font-weight:500;border-radius:40px;white-space:nowrap;transition:all var(--transition);font-family:var(--font-body);cursor:pointer}
-.filter-btn:hover{border-color:var(--green);color:var(--white)}
-.filter-btn.active{background:var(--green);border-color:var(--green);color:var(--white)}
+.projects-filter-bar {
+  padding: 0 48px;
+  background: var(--black2);
+  position: sticky;
+  top: var(--nav-h);
+  z-index: 100;
+  border-bottom: 1px solid var(--black4);
+}
+
+.projects-filter-bar .filter-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 16px 0;
+  flex-wrap: wrap;
+}
+
+.filter-categories {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.filter-categories::-webkit-scrollbar {
+  display: none;
+}
+
+.filter-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  padding: 9px 20px;
+  background: transparent;
+  border: 1px solid var(--black5);
+  color: var(--grey3);
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 40px;
+  white-space: nowrap;
+  transition: all var(--transition);
+  font-family: var(--font-body);
+  cursor: pointer;
+}
+
+.filter-btn:hover {
+  border-color: var(--green);
+  color: var(--white);
+}
+
+.filter-btn.active {
+  background: var(--green);
+  border-color: var(--green);
+  color: var(--white);
+}
+
+/* Search Box Design */
+.search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--black3);
+  border: 1px solid var(--black5);
+  border-radius: 40px;
+  padding: 0 16px;
+  height: 38px;
+  width: 220px;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.search-box:focus-within {
+  border-color: var(--green);
+  box-shadow: 0 0 10px rgba(43, 176, 74, 0.15);
+}
+
+.search-box svg {
+  color: var(--grey3);
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.search-box input {
+  background: transparent;
+  border: none;
+  color: var(--white);
+  font-family: var(--font-body);
+  font-size: 13px;
+  width: 100%;
+  outline: none;
+}
+
+.search-box input::placeholder {
+  color: var(--grey3);
+}
+
+.clear-search-btn {
+  background: transparent;
+  border: none;
+  color: var(--grey2);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.clear-search-btn:hover {
+  color: var(--white);
+}
+
+/* Location Select styling */
+.location-select-wrapper {
+  position: relative;
+}
+
+.location-select {
+  background: var(--black3);
+  border: 1px solid var(--black5);
+  color: var(--white);
+  border-radius: 40px;
+  padding: 0 20px;
+  height: 38px;
+  font-size: 13px;
+  font-family: var(--font-body);
+  outline: none;
+  cursor: pointer;
+  transition: border-color var(--transition);
+  appearance: none;
+  -webkit-appearance: none;
+  min-width: 150px;
+}
+
+.location-select:hover,
+.location-select:focus {
+  border-color: var(--green);
+}
+
+/* Add custom arrow for select */
+.location-select-wrapper::after {
+  content: "";
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--grey2);
+  pointer-events: none;
+}
+
+.location-select-wrapper:hover::after {
+  border-top-color: var(--white);
+}
+
+/* ── STAGGERED FADE-IN ENTRANCE ANIMATION ────────────────────────── */
+.project-card-animate {
+  opacity: 0;
+  animation: projectFadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes projectFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Media Query adjustments for filters */
+@media (max-width: 992px) {
+  .projects-filter-bar .filter-inner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+  .filter-controls {
+    justify-content: space-between;
+  }
+  .search-box {
+    flex: 1;
+    max-width: 100%;
+  }
+  .location-select-wrapper {
+    flex: 1;
+  }
+  .location-select {
+    width: 100%;
+  }
+}
 .projects-section{padding:80px 48px;background:var(--black)}
 .projects-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
 .project-card{background:var(--black3);position:relative;overflow:hidden;cursor:pointer;transition:transform var(--transition)}
@@ -58,4 +247,75 @@
   .project-card.large, .reveal.large{grid-column:span 1}
   .project-card.large .project-img, .reveal.large .project-img{aspect-ratio:4/3}
   .stats-strip-inner{grid-template-columns:1fr 1fr}
+}
+
+/* ── PROJECTS SKELETON ────────────────────────────────────────────────── */
+.project-skeleton-card {
+  background: var(--black3);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.project-skeleton-card.large {
+  grid-column: span 2;
+}
+
+.project-img-skeleton {
+  aspect-ratio: 4/3;
+  width: 100%;
+}
+
+.project-skeleton-card.large .project-img-skeleton {
+  aspect-ratio: 16/7;
+}
+
+.project-meta-skeleton {
+  padding: 20px 24px 24px;
+  background: var(--black3);
+  border-top: 1px solid var(--black5);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.proj-cat-skeleton {
+  width: 80px;
+  height: 12px;
+  border-radius: 4px;
+}
+
+.proj-title-skeleton {
+  width: 70%;
+  height: 20px;
+  border-radius: 4px;
+}
+
+.proj-location-skeleton {
+  width: 40%;
+  height: 14px;
+  border-radius: 4px;
+}
+
+.proj-tag-skeleton {
+  width: 90px;
+  height: 22px;
+  border-radius: 20px;
+  margin-top: 4px;
+}
+
+@media(max-width:1024px){
+  .project-skeleton-card.large {
+    grid-column: span 2;
+  }
+}
+
+@media(max-width:640px){
+  .project-skeleton-card.large {
+    grid-column: span 1;
+  }
+  .project-skeleton-card.large .project-img-skeleton {
+    aspect-ratio: 4/3;
+  }
 }

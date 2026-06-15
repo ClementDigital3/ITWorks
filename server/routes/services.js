@@ -3,6 +3,8 @@ const router = express.Router()
 const { getServices, getService, createService, updateService, deleteService } = require('../controllers/serviceController')
 const auth = require('../middleware/auth')
 
+const delay = (ms) => (req, res, next) => setTimeout(next, ms)
+
 router.get('/', getServices)
 router.get('/:slug', getService)
 router.post('/', auth, createService)

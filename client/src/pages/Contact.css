@@ -60,3 +60,197 @@
 @media(max-width:640px){
   .contact-form-wrap{padding:28px 20px}
 }
+
+/* ── SUCCESS MODAL OVERLAY ─────────────────────────────────────────────── */
+.success-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 5, 5, 0.85);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.3s ease forwards;
+}
+
+.success-modal-card {
+  background: #0d0d0d;
+  border: 1px solid rgba(43, 176, 74, 0.25);
+  border-radius: 16px;
+  padding: 48px 32px;
+  max-width: 460px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8), 0 0 40px rgba(43, 176, 74, 0.1);
+  position: relative;
+  overflow: hidden;
+  animation: modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.success-modal-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--green), var(--orange));
+}
+
+/* Checkmark animation */
+.success-checkmark-svg {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: block;
+  stroke-width: 2;
+  stroke: var(--green);
+  stroke-miterlimit: 10;
+  box-shadow: inset 0px 0px 0px var(--green);
+  animation: fillCircle .4s ease-in-out .4s forwards, scaleCheckmark .3s ease-in-out .9s both;
+  margin: 0 auto 24px;
+}
+
+.checkmark-circle {
+  stroke-dasharray: 166;
+  stroke-dashoffset: 166;
+  stroke-width: 2;
+  stroke-miterlimit: 10;
+  stroke: var(--green);
+  fill: none;
+  animation: strokeCircle 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.checkmark-check {
+  transform-origin: 50% 50%;
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke: var(--white);
+  fill: none;
+  animation: strokeCheck 0.3s 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+@keyframes strokeCircle {
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes fillCircle {
+  100% {
+    box-shadow: inset 0px 0px 0px 40px var(--green);
+  }
+}
+
+@keyframes scaleCheckmark {
+  0%, 100% {
+    transform: none;
+  }
+  50% {
+    transform: scale3d(1.1, 1.1, 1);
+  }
+}
+
+@keyframes strokeCheck {
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.success-modal-card h2 {
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 900;
+  color: var(--white);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.success-intro {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--grey1);
+  margin-bottom: 8px;
+}
+
+.success-intro .highlight {
+  color: var(--green2);
+  font-weight: 700;
+}
+
+.success-description {
+  font-size: 14px;
+  color: var(--grey2);
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.success-summary-box {
+  background: var(--black4);
+  border: 1px solid var(--black5);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 32px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.summary-label {
+  color: var(--grey3);
+  font-weight: 500;
+}
+
+.summary-value {
+  color: var(--white);
+  font-weight: 600;
+}
+
+.success-close-btn {
+  width: 100%;
+  padding: 14px 28px;
+  background: var(--green);
+  color: var(--white);
+  font-size: 15px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-radius: var(--radius);
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 0 20px rgba(43, 176, 74, 0.3);
+  transition: all var(--transition);
+}
+
+.success-close-btn:hover {
+  background: var(--green2);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(43, 176, 74, 0.5);
+}

@@ -6,6 +6,7 @@ import './Contact.css'
 export default function Contact() {
   const [form, setForm] = useState({ firstName:'', lastName:'', phone:'', email:'', service:'', location:'', size:'', message:'' })
   const [status, setStatus] = useState('idle')
+  const [submittedData, setSubmittedData] = useState(null)
   const revealRef = useReveal()
 
   const handleChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }))
@@ -19,9 +20,21 @@ export default function Contact() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form)
       })
-      if (res.ok) { setStatus('success'); setForm({ firstName:'', lastName:'', phone:'', email:'', service:'', location:'', size:'', message:'' }) }
-      else setStatus('error')
-    } catch { setStatus('error') }
+      if (res.ok) {
+        setSubmittedData({
+          firstName: form.firstName,
+          phone: form.phone,
+          service: form.service,
+          location: form.location
+        })
+        setStatus('success')
+        setForm({ firstName:'', lastName:'', phone:'', email:'', service:'', location:'', size:'', message:'' })
+      } else {
+        setStatus('error')
+      }
+    } catch {
+      setStatus('error')
+    }
   }
 
   return (
@@ -61,60 +74,56 @@ export default function Contact() {
           <div className="contact-form-wrap reveal">
             <div className="form-title">Request a Free Quote</div>
             <div className="form-sub">Fill in the form and we'll get back to you within the hour. A free site survey is included with every quote.</div>
-            {status === 'success' ? (
-              <div className="form-success"><p>✓ Message sent! We'll be in touch within the hour.</p></div>
-            ) : (
-              <form onSubmit={handleSubmit}>
-                <div className="form-row">
-                  <div className="form-group"><label>First Name *</label><input name="firstName" value={form.firstName} onChange={handleChange} placeholder="John" required/></div>
-                  <div className="form-group"><label>Last Name *</label><input name="lastName" value={form.lastName} onChange={handleChange} placeholder="Kamau" required/></div>
-                </div>
-                <div className="form-row">
-                  <div className="form-group"><label>Phone / WhatsApp *</label><input name="phone" value={form.phone} onChange={handleChange} placeholder="+254 7XX XXX XXX" required/></div>
-                  <div className="form-group"><label>Email Address</label><input type="email" name="email" value={form.email} onChange={handleChange} placeholder="john@example.com"/></div>
-                </div>
+            <form onSubmit={handleSubmit}>
+              <div className="form-row">
+                <div className="form-group"><label>First Name *</label><input name="firstName" value={form.firstName} onChange={handleChange} placeholder="John" required/></div>
+                <div className="form-group"><label>Last Name *</label><input name="lastName" value={form.lastName} onChange={handleChange} placeholder="Kamau" required/></div>
+              </div>
+              <div className="form-row">
+                <div className="form-group"><label>Phone / WhatsApp *</label><input name="phone" value={form.phone} onChange={handleChange} placeholder="+254 7XX XXX XXX" required/></div>
+                <div className="form-group"><label>Email Address</label><input type="email" name="email" value={form.email} onChange={handleChange} placeholder="john@example.com"/></div>
+              </div>
+              <div className="form-group">
+                <label>Service Interested In *</label>
+                <select name="service" value={form.service} onChange={handleChange} required>
+                  <option value="" disabled>Select a service...</option>
+                  <option>Home WiFi Setup</option>
+                  <option>Office & Enterprise Networks</option>
+                  <option>Hotspot & Captive Portal</option>
+                  <option>CCTV & Surveillance</option>
+                  <option>Structured Cabling</option>
+                  <option>IT Support & Maintenance</option>
+                  <option>Multiple Services</option>
+                  <option>Not Sure — Need Advice</option>
+                </select>
+              </div>
+              <div className="form-row">
+                <div className="form-group"><label>Your Location *</label><input name="location" value={form.location} onChange={handleChange} placeholder="Eldoret, Nakuru..." required/></div>
                 <div className="form-group">
-                  <label>Service Interested In *</label>
-                  <select name="service" value={form.service} onChange={handleChange} required>
-                    <option value="" disabled>Select a service...</option>
-                    <option>Home WiFi Setup</option>
-                    <option>Office & Enterprise Networks</option>
-                    <option>Hotspot & Captive Portal</option>
-                    <option>CCTV & Surveillance</option>
-                    <option>Structured Cabling</option>
-                    <option>IT Support & Maintenance</option>
-                    <option>Multiple Services</option>
-                    <option>Not Sure — Need Advice</option>
+                  <label>Property Size</label>
+                  <select name="size" value={form.size} onChange={handleChange}>
+                    <option value="">Select size...</option>
+                    <option>Single room / Apartment</option>
+                    <option>3–5 bedroom home</option>
+                    <option>Large home / Villa</option>
+                    <option>Small office (1–10 staff)</option>
+                    <option>Medium office (10–50 staff)</option>
+                    <option>Large office / Building</option>
+                    <option>Hotel / Estate</option>
+                    <option>School / Institution</option>
                   </select>
                 </div>
-                <div className="form-row">
-                  <div className="form-group"><label>Your Location *</label><input name="location" value={form.location} onChange={handleChange} placeholder="Eldoret, Nakuru..." required/></div>
-                  <div className="form-group">
-                    <label>Property Size</label>
-                    <select name="size" value={form.size} onChange={handleChange}>
-                      <option value="">Select size...</option>
-                      <option>Single room / Apartment</option>
-                      <option>3–5 bedroom home</option>
-                      <option>Large home / Villa</option>
-                      <option>Small office (1–10 staff)</option>
-                      <option>Medium office (10–50 staff)</option>
-                      <option>Large office / Building</option>
-                      <option>Hotel / Estate</option>
-                      <option>School / Institution</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="form-group"><label>Additional Details</label><textarea name="message" value={form.message} onChange={handleChange} placeholder="Tell us more — current ISP, number of floors, specific challenges, timeline..." rows={4}/></div>
-                {status === 'error' && <p className="form-error">Something went wrong. Please WhatsApp us directly.</p>}
-                <button type="submit" className="form-submit" disabled={status === 'loading'}>
-                  {status === 'loading' ? 'Sending...' : <>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                    Send My Request
-                  </>}
-                </button>
-                <p className="form-note">We never share your data. By submitting you agree to be contacted by ITWORKS Technologies Limited.</p>
-              </form>
-            )}
+              </div>
+              <div className="form-group"><label>Additional Details</label><textarea name="message" value={form.message} onChange={handleChange} placeholder="Tell us more — current ISP, number of floors, specific challenges, timeline..." rows={4}/></div>
+              {status === 'error' && <p className="form-error">Something went wrong. Please WhatsApp us directly.</p>}
+              <button type="submit" className="form-submit" disabled={status === 'loading'}>
+                {status === 'loading' ? 'Sending...' : <>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                  Send My Request
+                </>}
+              </button>
+              <p className="form-note">We never share your data. By submitting you agree to be contacted by ITWORKS Technologies Limited.</p>
+            </form>
           </div>
 
           <div className="contact-info reveal reveal-delay-1">
@@ -154,6 +163,37 @@ export default function Contact() {
           </div>
         </div>
       </section>
+
+      {status === 'success' && submittedData && (
+        <div className="success-modal-overlay">
+          <div className="success-modal-card">
+            <svg className="success-checkmark-svg" viewBox="0 0 52 52">
+              <circle className="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+              <path className="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+            </svg>
+            <h2>Request Received!</h2>
+            <p className="success-intro">
+              Thank you, <span className="highlight">{submittedData.firstName}</span>!
+            </p>
+            <p className="success-description">
+              Our network engineering team has received your request for <strong>{submittedData.service}</strong>. We will call you at <strong>{submittedData.phone}</strong> in under 30 minutes.
+            </p>
+            <div className="success-summary-box">
+              <div className="summary-item">
+                <span className="summary-label">Service:</span>
+                <span className="summary-value">{submittedData.service}</span>
+              </div>
+              <div className="summary-item">
+                <span className="summary-label">Location:</span>
+                <span className="summary-value">{submittedData.location}</span>
+              </div>
+            </div>
+            <button type="button" className="success-close-btn" onClick={() => { setStatus('idle'); setSubmittedData(null); }}>
+              Done, Thank You!
+            </button>
+          </div>
+        </div>
+      )}
     </main>
   )
 }

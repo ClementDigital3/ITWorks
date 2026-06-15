@@ -46,7 +46,8 @@ export default function Services() {
   const [open, setOpen] = useState(null)
   const [faqOpen, setFaqOpen] = useState(null)
   const [filter, setFilter] = useState('All Services')
-  const [services, setServices] = useState(SERVICES)
+  const [services, setServices] = useState([])
+  const [loading, setLoading] = useState(true)
   const revealRef = useReveal([services])
 
   useEffect(() => {
@@ -77,10 +78,20 @@ export default function Services() {
           }))
           if (normalized.length > 0) {
             setServices(normalized)
+          } else {
+            setServices(SERVICES)
           }
+        } else {
+          setServices(SERVICES)
         }
       })
-      .catch(err => console.log('Using local services fallback:', err.message))
+      .catch(err => {
+        console.log('Using local services fallback:', err.message)
+        setServices(SERVICES)
+      })
+      .finally(() => {
+        setLoading(false)
+      })
   }, [])
 
   const filtered = filter === 'All Services' ? services : services.filter(s => s.id === FILTER_MAP[filter])
@@ -107,26 +118,39 @@ export default function Services() {
 
       <section className="services-main">
         <div className="services-list">
-          {filtered.map((s, i) => (
-            <div key={s.id} className="reveal">
-              <div className={`service-block ${open === s.id ? 'open' : ''}`}>
-                <div className="service-block-header" onClick={() => setOpen(open === s.id ? null : s.id)}>
-                  <div className="svc-num">0{i+1}</div>
-                  <div className="svc-header-content">
-                    <div className="svc-icon-row">
-                      <div className="svc-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg></div>
-                      <span className="svc-tag">{s.cat}</span>
-                    </div>
-                    <div className="svc-title">
-                      {s.title}
-                      {s.comingSoon && <span className="badge-coming-soon">Soon</span>}
-                    </div>
-                    <div className="svc-tagline">{s.tagline}</div>
-                  </div>
-                  <div className="svc-toggle">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                  </div>
+          {loading ? (
+            [1, 2, 3].map(i => (
+              <div key={i} className="service-block-skeleton">
+                <div className="svc-num-skeleton skeleton-pulse" />
+                <div className="svc-header-content">
+                  <div className="svc-icon-row-skeleton skeleton-pulse" />
+                  <div className="svc-title-skeleton skeleton-pulse" />
+                  <div className="svc-tagline-skeleton skeleton-pulse" />
                 </div>
+                <div className="svc-toggle-skeleton skeleton-pulse" />
+              </div>
+            ))
+          ) : (
+            filtered.map((s, i) => (
+              <div key={s.id} className="reveal">
+                <div className={`service-block ${open === s.id ? 'open' : ''}`}>
+                  <div className="service-block-header" onClick={() => setOpen(open === s.id ? null : s.id)}>
+                    <div className="svc-num">0{i+1}</div>
+                    <div className="svc-header-content">
+                      <div className="svc-icon-row">
+                        <div className="svc-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg></div>
+                        <span className="svc-tag">{s.cat}</span>
+                      </div>
+                      <div className="svc-title">
+                        {s.title}
+                        {s.comingSoon && <span className="badge-coming-soon">Soon</span>}
+                      </div>
+                      <div className="svc-tagline">{s.tagline}</div>
+                    </div>
+                    <div className="svc-toggle">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    </div>
+                  </div>
                   <div className="service-block-body">
                     <div className="svc-body-inner">
                       {s.comingSoon ? (
@@ -213,9 +237,10 @@ export default function Services() {
                       )}
                     </div>
                   </div>
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </section>
 

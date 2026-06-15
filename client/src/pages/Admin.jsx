@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import './Admin.css'
 
@@ -9,11 +9,18 @@ export default function Admin() {
   const [authLoading, setAuthLoading] = useState(false)
   const [authError, setAuthError] = useState('')
 
-  const [activeTab, setActiveTab] = useState('projects') // 'projects' | 'services' | 'about'
+  const [activeTab, setActiveTab] = useState('projects') // 'projects' | 'services' | 'about' | 'contacts'
   const [projects, setProjects] = useState([])
   const [services, setServices] = useState([])
+  const [contacts, setContacts] = useState([])
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState(null) // { text: string, type: 'success' | 'error' }
+
+  // Leads Filters & Expanders State
+  const [expandedContactId, setExpandedContactId] = useState(null)
+  const [contactSearch, setContactSearch] = useState('')
+  const [contactStatusFilter, setContactStatusFilter] = useState('all')
+  const [contactServiceFilter, setContactServiceFilter] = useState('all')
 
   // Form State for Projects and Services
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -92,6 +99,23 @@ export default function Admin() {
           areaText: aboutData.areaText || ''
         })
       }
+
+      // Fetch Contacts securely
+      const contactRes = await fetch('/api/contact', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (contactRes.status === 401) {
+        localStorage.removeItem('adminToken')
+        setToken('')
+        showMsg('Session expired. Please log in again.', 'error')
+        return
+      }
+      const contactData = await contactRes.json()
+      if (Array.isArray(contactData)) {
+        setContacts(contactData)
+      } else {
+        setContacts([])
+      }
     } catch (err) {
       showMsg('Failed to load database items.', 'error')
     } finally {
@@ -135,6 +159,36 @@ export default function Admin() {
     localStorage.removeItem('adminToken')
     setToken('')
     showMsg('Signed out successfully.')
+  }
+
+  const handleContactStatusUpdate = async (id, newStatus) => {
+    try {
+      const res = await fetch(`/api/contact/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ status: newStatus })
+      })
+
+      if (res.status === 401) {
+        localStorage.removeItem('adminToken')
+        setToken('')
+        showMsg('Session expired. Please log in again.', 'error')
+        return
+      }
+
+      const data = await res.json()
+      if (res.ok && (data._id || data.success)) {
+        showMsg('Lead status updated successfully!')
+        setContacts(prev => prev.map(c => c._id === id ? { ...c, status: newStatus } : c))
+      } else {
+        showMsg(data.error || 'Failed to update lead status.', 'error')
+      }
+    } catch (err) {
+      showMsg('Network error occurred.', 'error')
+    }
   }
 
   const showMsg = (text, type = 'success') => {
@@ -446,6 +500,75 @@ export default function Admin() {
     )
   }
 
+  // ── ANALYTICS CALCULATIONS ──────────────────────────────────────────
+  const totalLeads = contacts.length
+  const newLeads = contacts.filter(c => c.status === 'new').length
+  const contactedLeads = contacts.filter(c => c.status === 'contacted').length
+  const convertedLeads = contacts.filter(c => c.status === 'converted').length
+  const closedLeads = contacts.filter(c => c.status === 'closed').length
+  const conversionRate = totalLeads > 0 ? Math.round((convertedLeads / totalLeads) * 100) : 0
+
+  // Service popularities
+  const servicesMap = {
+    'Home WiFi Setup': 0,
+    'Office Networks': 0,
+    'IT Support': 0,
+    'Hotspot Deployment': 0,
+    'CCTV & Surveillance': 0,
+    'Structured Cabling': 0
+  }
+  contacts.forEach(c => {
+    if (servicesMap[c.service] !== undefined) {
+      servicesMap[c.service]++
+    } else if (c.service) {
+      servicesMap[c.service] = (servicesMap[c.service] || 0) + 1
+    }
+  })
+  const serviceData = Object.entries(servicesMap)
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count)
+
+  // Top locations
+  const locationsMap = {}
+  contacts.forEach(c => {
+    if (c.location) {
+      const loc = c.location.trim()
+      const normalizedLoc = loc.replace(/\b\w/g, l => l.toUpperCase())
+      locationsMap[normalizedLoc] = (locationsMap[normalizedLoc] || 0) + 1
+    }
+  })
+  const locationData = Object.entries(locationsMap)
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5)
+
+  // Last 6 months trend
+  const getTrendData = () => {
+    const trendList = []
+    const now = new Date()
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      trendList.push({
+        name: d.toLocaleString('en-US', { month: 'short' }),
+        year: d.getFullYear(),
+        monthNum: d.getMonth(),
+        count: 0
+      })
+    }
+    
+    contacts.forEach(c => {
+      const created = new Date(c.createdAt)
+      const cMonth = created.getMonth()
+      const cYear = created.getFullYear()
+      const match = trendList.find(m => m.monthNum === cMonth && m.year === cYear)
+      if (match) {
+        match.count++
+      }
+    })
+    return trendList
+  }
+  const trendData = getTrendData()
+
   return (
     <main className="admin-page">
       <section className="page-hero">
@@ -488,9 +611,21 @@ export default function Admin() {
           >
             About Page Content
           </button>
+          <button 
+            className={`tab-btn ${activeTab === 'contacts' ? 'active' : ''}`} 
+            onClick={() => { setActiveTab('contacts'); setIsFormOpen(false); }}
+          >
+            Quote Requests ({contacts.length})
+          </button>
+          <button 
+            className={`tab-btn ${activeTab === 'analytics' ? 'active' : ''}`} 
+            onClick={() => { setActiveTab('analytics'); setIsFormOpen(false); }}
+          >
+            Analytics & Insights
+          </button>
         </div>
         
-        {activeTab !== 'about' && (
+        {activeTab !== 'about' && activeTab !== 'contacts' && activeTab !== 'analytics' && (
           <button className="btn-primary add-new-btn" onClick={handleAddClick}>
             + Add New {activeTab === 'projects' ? 'Project' : 'Service'}
           </button>
@@ -752,6 +887,343 @@ export default function Admin() {
             </div>
 
           </form>
+        ) : activeTab === 'contacts' ? (
+          <div className="crm-lead-container">
+            <div className="crm-filter-bar">
+              <div className="crm-search-box">
+                <svg className="crm-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input
+                  type="text"
+                  placeholder="Search name, phone, or location..."
+                  value={contactSearch}
+                  onChange={e => setContactSearch(e.target.value)}
+                />
+              </div>
+              <div className="crm-select-filters">
+                <div className="crm-filter-group">
+                  <label>Status</label>
+                  <select value={contactStatusFilter} onChange={e => setContactStatusFilter(e.target.value)}>
+                    <option value="all">All Statuses</option>
+                    <option value="new">New</option>
+                    <option value="contacted">Contacted</option>
+                    <option value="converted">Converted</option>
+                    <option value="closed">Closed / Spam</option>
+                  </select>
+                </div>
+                <div className="crm-filter-group">
+                  <label>Service Type</label>
+                  <select value={contactServiceFilter} onChange={e => setContactServiceFilter(e.target.value)}>
+                    <option value="all">All Services</option>
+                    <option value="Home WiFi Setup">Home WiFi</option>
+                    <option value="Office Networks">Office Networks</option>
+                    <option value="IT Support">IT Support</option>
+                    <option value="Hotspot Deployment">Hotspot Deployment</option>
+                    <option value="CCTV & Surveillance">CCTV & Surveillance</option>
+                    <option value="Structured Cabling">Structured Cabling</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="table-responsive">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Client Name</th>
+                    <th>Contact Details</th>
+                    <th>Service</th>
+                    <th>Location & Size</th>
+                    <th>Lead Status</th>
+                    <th style={{ textAlign: 'center' }}>Details</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {contacts
+                    .filter(c => {
+                      const name = `${c.firstName || ''} ${c.lastName || ''}`.toLowerCase()
+                      const phone = (c.phone || '').toLowerCase()
+                      const location = (c.location || '').toLowerCase()
+                      const query = contactSearch.toLowerCase()
+                      
+                      const matchesSearch = name.includes(query) || phone.includes(query) || location.includes(query)
+                      const matchesStatus = contactStatusFilter === 'all' || c.status === contactStatusFilter
+                      const matchesService = contactServiceFilter === 'all' || c.service === contactServiceFilter
+                      
+                      return matchesSearch && matchesStatus && matchesService
+                    })
+                    .length > 0 ? (
+                      contacts
+                        .filter(c => {
+                          const name = `${c.firstName || ''} ${c.lastName || ''}`.toLowerCase()
+                          const phone = (c.phone || '').toLowerCase()
+                          const location = (c.location || '').toLowerCase()
+                          const query = contactSearch.toLowerCase()
+                          
+                          const matchesSearch = name.includes(query) || phone.includes(query) || location.includes(query)
+                          const matchesStatus = contactStatusFilter === 'all' || c.status === contactStatusFilter
+                          const matchesService = contactServiceFilter === 'all' || c.service === contactServiceFilter
+                          
+                          return matchesSearch && matchesStatus && matchesService
+                        })
+                        .map(c => {
+                          const isExpanded = expandedContactId === c._id
+                          const dateFormatted = new Date(c.createdAt).toLocaleDateString('en-KE', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })
+                          
+                          return (
+                            <React.Fragment key={c._id}>
+                              <tr className={isExpanded ? 'row-expanded-header' : ''}>
+                                <td style={{ fontSize: '13px', color: 'var(--grey2)' }}>{dateFormatted}</td>
+                                <td className="font-semibold">{c.firstName} {c.lastName}</td>
+                                <td>
+                                  <div className="crm-contact-links">
+                                    <a href={`tel:${c.phone}`} className="crm-phone-link">📞 {c.phone}</a>
+                                    {c.email && <a href={`mailto:${c.email}`} className="crm-email-link">✉️ {c.email}</a>}
+                                  </div>
+                                </td>
+                                <td>
+                                  <span className="pill-category">{c.service}</span>
+                                </td>
+                                <td>
+                                  <div>{c.location}</div>
+                                  {c.size && <div style={{ fontSize: '11px', color: 'var(--grey2)', marginTop: '2px' }}>Size: {c.size}</div>}
+                                </td>
+                                <td>
+                                  <select
+                                    className={`crm-status-dropdown status-${c.status}`}
+                                    value={c.status}
+                                    onChange={e => handleContactStatusUpdate(c._id, e.target.value)}
+                                  >
+                                    <option value="new">New</option>
+                                    <option value="contacted">Contacted</option>
+                                    <option value="converted">Converted</option>
+                                    <option value="closed">Closed</option>
+                                  </select>
+                                </td>
+                                <td style={{ textAlign: 'center' }}>
+                                  <button
+                                    className="btn-edit"
+                                    onClick={() => setExpandedContactId(isExpanded ? null : c._id)}
+                                  >
+                                    {isExpanded ? 'Hide Message' : 'View Message'}
+                                  </button>
+                                </td>
+                              </tr>
+                              {isExpanded && (
+                                <tr className="row-expanded-details">
+                                  <td colSpan="7">
+                                    <div className="crm-expanded-message-box">
+                                      <div className="message-label">Customer Message:</div>
+                                      <p className="message-text">{c.message || 'No message provided.'}</p>
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
+                            </React.Fragment>
+                          )
+                        })
+                    ) : (
+                      <tr>
+                        <td colSpan="7" style={{ textAlign: 'center', padding: '40px 0', color: 'var(--grey2)' }}>
+                          No quote requests found matching the current filters.
+                        </td>
+                      </tr>
+                    )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : activeTab === 'analytics' ? (
+          <div className="crm-analytics-container">
+            {/* Metric Cards Grid */}
+            <div className="analytics-metrics-grid">
+              <div className="metric-card">
+                <div className="metric-icon">📊</div>
+                <div className="metric-info">
+                  <span className="metric-label">Total Quote Requests</span>
+                  <span className="metric-value">{totalLeads}</span>
+                </div>
+              </div>
+              <div className="metric-card">
+                <div className="metric-icon green">📈</div>
+                <div className="metric-info">
+                  <span className="metric-label">Conversion Rate</span>
+                  <span className="metric-value">{conversionRate}%</span>
+                </div>
+              </div>
+              <div className="metric-card">
+                <div className="metric-icon blue">⚡</div>
+                <div className="metric-info">
+                  <span className="metric-label">New / Pending</span>
+                  <span className="metric-value">{newLeads}</span>
+                </div>
+              </div>
+              <div className="metric-card">
+                <div className="metric-icon orange">🏆</div>
+                <div className="metric-info">
+                  <span className="metric-label">Converted Clients</span>
+                  <span className="metric-value">{convertedLeads}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Charts Section Grid */}
+            <div className="analytics-charts-grid">
+              {/* Trend Chart Card */}
+              <div className="analytics-chart-card trend-card">
+                <h3>Lead Generation Volume</h3>
+                <p className="card-sub">Last 6 Months Activity</p>
+                <div className="chart-wrapper">
+                  {totalLeads > 0 ? (
+                    <svg className="svg-trend-chart" viewBox="0 0 500 200" width="100%" height="100%">
+                      <defs>
+                        <linearGradient id="chartGlow" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="var(--green)" stopOpacity="0.3" />
+                          <stop offset="100%" stopColor="var(--green)" stopOpacity="0" />
+                        </linearGradient>
+                      </defs>
+                      {/* Grid Lines */}
+                      {[0, 1, 2, 3, 4].map(i => {
+                        const y = 30 + i * 35
+                        return (
+                          <line key={i} x1="40" y1={y} x2="460" y2={y} stroke="var(--black5)" strokeWidth="1" strokeDasharray="4 4" />
+                        )
+                      })}
+                      
+                      {/* X Axis Labels */}
+                      {trendData.map((d, i) => (
+                        <text key={i} x={40 + i * 84} y="192" fill="var(--grey2)" fontSize="11" textAnchor="middle">
+                          {d.name}
+                        </text>
+                      ))}
+
+                      {/* Area Fill */}
+                      <path
+                        d={`M 40 170 ${trendData.map((d, i) => `L ${40 + i * 84} ${170 - (d.count / Math.max(...trendData.map(td => td.count), 5)) * 140}`).join(' ')} L 460 170 Z`}
+                        fill="url(#chartGlow)"
+                      />
+
+                      {/* Line Path */}
+                      <path
+                        d={trendData.map((d, i) => `${i === 0 ? 'M' : 'L'} ${40 + i * 84} ${170 - (d.count / Math.max(...trendData.map(td => td.count), 5)) * 140}`).join(' ')}
+                        fill="none"
+                        stroke="var(--green)"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+
+                      {/* Data Circles & Tooltips */}
+                      {trendData.map((d, i) => {
+                        const cx = 40 + i * 84
+                        const cy = 170 - (d.count / Math.max(...trendData.map(td => td.count), 5)) * 140
+                        return (
+                          <g key={i} className="chart-node-group">
+                            <circle cx={cx} cy={cy} r="5" fill="var(--black1)" stroke="var(--green)" strokeWidth="3" />
+                            <circle cx={cx} cy={cy} r="10" fill="transparent" className="node-hover-trigger" />
+                            <g className="node-tooltip">
+                              <rect x={cx - 24} y={cy - 34} width="48" height="24" rx="4" fill="var(--black2)" stroke="var(--black4)" strokeWidth="1" />
+                              <text x={cx} y={cy - 18} fill="var(--white)" fontSize="10" fontWeight="700" textAnchor="middle">{d.count} leads</text>
+                            </g>
+                          </g>
+                        )
+                      })}
+                    </svg>
+                  ) : (
+                    <div className="no-data-placeholder">No lead history records found.</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Service popularities Card */}
+              <div className="analytics-chart-card service-card">
+                <h3>Services Distribution</h3>
+                <p className="card-sub">Requested WiFi & Networks</p>
+                <div className="service-bars-list">
+                  {totalLeads > 0 ? (
+                    serviceData.map(({ name, count }) => {
+                      const percentage = Math.round((count / totalLeads) * 100)
+                      return (
+                        <div key={name} className="service-bar-item">
+                          <div className="bar-labels">
+                            <span className="bar-name">{name}</span>
+                            <span className="bar-value">{count} ({percentage}%)</span>
+                          </div>
+                          <div className="bar-track">
+                            <div className="bar-fill" style={{ width: `${percentage}%` }} />
+                          </div>
+                        </div>
+                      )
+                    })
+                  ) : (
+                    <div className="no-data-placeholder">No quote statistics available.</div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Row Grid */}
+            <div className="analytics-bottom-grid">
+              {/* Location leaderboard */}
+              <div className="analytics-chart-card location-leaderboard">
+                <h3>Top Active Locations</h3>
+                <p className="card-sub">Hotspot & Cabling hotspots</p>
+                <div className="location-list">
+                  {locationData.length > 0 ? (
+                    locationData.map(({ name, count }, index) => {
+                      const maxLocCount = locationData[0].count
+                      const widthPercent = Math.round((count / maxLocCount) * 100)
+                      return (
+                        <div key={name} className="location-item">
+                          <div className="loc-rank">#{index + 1}</div>
+                          <div className="loc-details">
+                            <div className="loc-header">
+                              <span className="loc-name">{name}</span>
+                              <span className="loc-count">{count} leads</span>
+                            </div>
+                            <div className="loc-track">
+                              <div className="loc-fill" style={{ width: `${widthPercent}%` }} />
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })
+                  ) : (
+                    <div className="no-data-placeholder">No location data submitted.</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Lifecycle Funnel */}
+              <div className="analytics-chart-card funnel-card">
+                <h3>Lead Funnel Conversion</h3>
+                <p className="card-sub">Lifecycle status drop-off</p>
+                <div className="funnel-visualization">
+                  <div className="funnel-stage stage-new">
+                    <span className="stage-name">1. Captured Leads</span>
+                    <span className="stage-count">{totalLeads}</span>
+                    <div className="funnel-shape" />
+                  </div>
+                  <div className="funnel-stage stage-contacted" style={{ opacity: totalLeads > 0 ? 0.4 + (contactedLeads + convertedLeads) / totalLeads * 0.6 : 0.4 }}>
+                    <span className="stage-name">2. Contacted & Engaged</span>
+                    <span className="stage-count">{contactedLeads + convertedLeads}</span>
+                    <div className="funnel-shape" />
+                  </div>
+                  <div className="funnel-stage stage-converted" style={{ opacity: totalLeads > 0 ? 0.3 + convertedLeads / totalLeads * 0.7 : 0.3 }}>
+                    <span className="stage-name">3. Converted Clients</span>
+                    <span className="stage-count">{convertedLeads}</span>
+                    <div className="funnel-shape" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         ) : (
           <div className="table-responsive">
             <table className="admin-table">

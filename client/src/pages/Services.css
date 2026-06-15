@@ -273,3 +273,68 @@
     gap: 32px;
   }
 }
+
+/* ── SERVICES SKELETON ────────────────────────────────────────────────── */
+.service-block-skeleton {
+  background: var(--black2);
+  border: 1px solid var(--black4);
+  border-radius: var(--radius);
+  display: grid;
+  grid-template-columns: 80px 1fr auto;
+  align-items: center;
+  gap: 32px;
+  padding: 40px 48px;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 2px;
+}
+
+.svc-num-skeleton {
+  width: 60px;
+  height: 64px;
+  border-radius: 4px;
+}
+
+.svc-icon-row-skeleton {
+  width: 140px;
+  height: 24px;
+  border-radius: 20px;
+  margin-bottom: 12px;
+}
+
+.svc-title-skeleton {
+  width: 250px;
+  height: 32px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.svc-tagline-skeleton {
+  width: 60%;
+  height: 16px;
+  border-radius: 4px;
+}
+
+.svc-toggle-skeleton {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+}
+
+@media(max-width:1024px){
+  .service-block-skeleton {
+    grid-template-columns: 60px 1fr auto;
+    padding: 28px;
+    gap: 20px;
+  }
+}
+
+@media(max-width:640px){
+  .service-block-skeleton {
+    grid-template-columns: 1fr auto;
+    padding: 20px;
+  }
+  .svc-num-skeleton {
+    display: none;
+  }
+}
