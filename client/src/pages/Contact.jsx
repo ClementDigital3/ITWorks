@@ -1,13 +1,87 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useReveal } from '../hooks/useReveal'
 import './Contact.css'
 
 export default function Contact() {
-  const [form, setForm] = useState({ firstName:'', lastName:'', phone:'', email:'', service:'', location:'', size:'', message:'' })
+  const [form, setForm] = useState({ firstName:'', lastName:'', phone:'', email:'', service:'', location:'', size:'', message:'', surveyDate:'', surveyTime:'' })
+  const [bookSurvey, setBookSurvey] = useState(false)
   const [status, setStatus] = useState('idle')
   const [submittedData, setSubmittedData] = useState(null)
   const revealRef = useReveal()
+
+  const [appliedNotification, setAppliedNotification] = useState(false)
+  const [searchParams] = useSearchParams()
+
+  // Reviews Carousel States
+  const [reviews, setReviews] = useState([])
+  const [currentReviewIndex, setCurrentReviewIndex] = useState(0)
+
+  // Fetch approved reviews for the carousel
+  useEffect(() => {
+    fetch('/api/reviews')
+      .then(res => {
+        if (!res.ok) throw new Error('API error')
+        return res.json()
+      })
+      .then(data => {
+        if (data && data.length > 0) {
+          setReviews(data)
+        } else {
+          // Fallback testimonials if database is empty
+          setReviews([
+            { initials:'JM', name:'James Mutai', role:'Hotel Manager, Eldoret', text:'ITWORKS transformed our hotel\'s internet. Guests used to complain constantly — now it\'s one of our highest-rated features. The captive portal with M-Pesa is a game changer.' },
+            { initials:'AK', name:'Aisha Kiptoo', role:'Office Manager, Nakuru', text:'Our office network was a mess before ITWORKS. They came in, ran Cat6 throughout the building, and now everything just works. Fast, clean, professional.' },
+            { initials:'DN', name:'David Ng\'eno', role:'Homeowner, Eldoret', text:'They showed up on time, explained everything clearly, and our home WiFi now covers even the backyard. Highly recommend ITWORKS to anyone in Eldoret.' }
+          ])
+        }
+      })
+      .catch(() => {
+        setReviews([
+          { initials:'JM', name:'James Mutai', role:'Hotel Manager, Eldoret', text:'ITWORKS transformed our hotel\'s internet. Guests used to complain constantly — now it\'s one of our highest-rated features. The captive portal with M-Pesa is a game changer.' },
+          { initials:'AK', name:'Aisha Kiptoo', role:'Office Manager, Nakuru', text:'Our office network was a mess before ITWORKS. They came in, ran Cat6 throughout the building, and now everything just works. Fast, clean, professional.' },
+          { initials:'DN', name:'David Ng\'eno', role:'Homeowner, Eldoret', text:'They showed up on time, explained everything clearly, and our home WiFi now covers even the backyard. Highly recommend ITWORKS to anyone in Eldoret.' }
+        ])
+      })
+  }, [])
+
+  // Auto-play interval for reviews carousel
+  useEffect(() => {
+    if (!reviews || reviews.length === 0) return
+    const interval = setInterval(() => {
+      setCurrentReviewIndex(prev => (prev + 1) % reviews.length)
+    }, 6000)
+    return () => clearInterval(interval)
+  }, [reviews])
+
+  // Handle URL Search Params prefilling
+  useEffect(() => {
+    const serviceParam = searchParams.get('service')
+    const sizeParam = searchParams.get('size')
+    const prefill = searchParams.get('prefill')
+
+    if (serviceParam) {
+      setForm(prev => ({
+        ...prev,
+        service: serviceParam,
+        size: sizeParam || ''
+      }))
+    }
+
+    if (prefill === 'true') {
+      const formEl = document.getElementById('quote-form')
+      if (formEl) {
+        setTimeout(() => {
+          formEl.scrollIntoView({ behavior: 'smooth' })
+        }, 100)
+      }
+      setAppliedNotification(true)
+      const t = setTimeout(() => {
+        setAppliedNotification(false)
+      }, 4000)
+      return () => clearTimeout(t)
+    }
+  }, [searchParams])
 
   const handleChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }))
 
@@ -15,20 +89,28 @@ export default function Contact() {
     e.preventDefault()
     setStatus('loading')
     try {
+      const payload = {
+        ...form,
+        surveyDate: bookSurvey ? form.surveyDate : '',
+        surveyTime: bookSurvey ? form.surveyTime : ''
+      }
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form)
+        body: JSON.stringify(payload)
       })
       if (res.ok) {
         setSubmittedData({
           firstName: form.firstName,
           phone: form.phone,
           service: form.service,
-          location: form.location
+          location: form.location,
+          surveyDate: bookSurvey ? form.surveyDate : '',
+          surveyTime: bookSurvey ? form.surveyTime : ''
         })
         setStatus('success')
-        setForm({ firstName:'', lastName:'', phone:'', email:'', service:'', location:'', size:'', message:'' })
+        setForm({ firstName:'', lastName:'', phone:'', email:'', service:'', location:'', size:'', message:'', surveyDate:'', surveyTime:'' })
+        setBookSurvey(false)
       } else {
         setStatus('error')
       }
@@ -42,10 +124,61 @@ export default function Contact() {
       <section className="page-hero">
         <div className="page-hero-bg"/><div className="hero-grid"/>
         <div className="page-hero-inner">
-          <div className="breadcrumb"><Link to="/">Home</Link><span>/</span><span style={{color:'#fff'}}>Contact</span></div>
-          <div className="section-label" style={{animation:'fadeUp 0.7s ease both'}}>Get In Touch</div>
-          <h1 style={{animation:'fadeUp 0.7s 0.1s ease both'}}>Let's Build<br/><span>Something</span><br/>That Works.</h1>
-          <p style={{animation:'fadeUp 0.7s 0.2s ease both',marginTop:16}}>Free site survey. Honest quote. No obligation. We respond within the hour during business hours.</p>
+          <div className="page-hero-left">
+            <div className="breadcrumb"><Link to="/">Home</Link><span>/</span><span style={{color:'#fff'}}>Contact</span></div>
+            <div className="section-label" style={{animation:'fadeUp 0.7s ease both'}}>Get In Touch</div>
+            <h1 style={{animation:'fadeUp 0.7s 0.1s ease both'}}>Let's Build<br/><span>Something</span><br/>That Works.</h1>
+            <p style={{animation:'fadeUp 0.7s 0.2s ease both',marginTop:16}}>Free site survey. Honest quote. No obligation. We respond within the hour during business hours.</p>
+          </div>
+          <div className="page-hero-right">
+            {reviews.length > 0 && (
+              <div className="contact-reviews-carousel">
+                <div className="hero-reviews-container">
+                  <div className="hero-reviews-eyebrow">
+                    <span className="live-pulse" />
+                    <span>Client Feedback</span>
+                  </div>
+                  
+                  {(() => {
+                    const currentReview = reviews[currentReviewIndex % reviews.length];
+                    const initials = currentReview.initials || currentReview.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                    const colors = ['green', 'orange', 'blue', 'teal'];
+                    const avatarColor = colors[currentReviewIndex % colors.length];
+                    
+                    return (
+                      <div className="hero-review-card" key={currentReviewIndex}>
+                        <div className="hero-review-quote">“</div>
+                        <p className="hero-review-text">"{currentReview.text}"</p>
+                        <div className="hero-review-rating">
+                          {'★'.repeat(currentReview.rating || 5)}{'☆'.repeat(5 - (currentReview.rating || 5))}
+                        </div>
+                        <div className="hero-review-footer">
+                          <div className={`hero-review-avatar av-${avatarColor}`}>
+                            {initials}
+                          </div>
+                          <div className="hero-review-meta">
+                            <h4 className="hero-review-name">{currentReview.name}</h4>
+                            <p className="hero-review-role">{currentReview.role}</p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  <div className="hero-review-dots">
+                    {reviews.slice(0, 5).map((_, idx) => (
+                      <button
+                        key={idx}
+                        className={`hero-review-dot ${idx === (currentReviewIndex % reviews.length) ? 'active' : ''}`}
+                        onClick={() => setCurrentReviewIndex(idx)}
+                        aria-label={`Go to review ${idx + 1}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </section>
 
@@ -71,9 +204,17 @@ export default function Contact() {
 
       <section className="contact-main">
         <div className="contact-inner">
-          <div className="contact-form-wrap reveal">
+          <div id="quote-form" className="contact-form-wrap reveal">
             <div className="form-title">Request a Free Quote</div>
             <div className="form-sub">Fill in the form and we'll get back to you within the hour. A free site survey is included with every quote.</div>
+            {appliedNotification && (
+              <div className="prefill-badge">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginRight: 6 }}>
+                  <path d="M20 6L9 17l-5-5" />
+                </svg>
+                Selected package options applied to the form below!
+              </div>
+            )}
             <form onSubmit={handleSubmit}>
               <div className="form-row">
                 <div className="form-group"><label>First Name *</label><input name="firstName" value={form.firstName} onChange={handleChange} placeholder="John" required/></div>
@@ -100,20 +241,87 @@ export default function Contact() {
               <div className="form-row">
                 <div className="form-group"><label>Your Location *</label><input name="location" value={form.location} onChange={handleChange} placeholder="Eldoret, Nakuru..." required/></div>
                 <div className="form-group">
-                  <label>Property Size</label>
+                  <label>{form.service === 'Home WiFi Setup' ? 'Internet Plan / Speed' : 'Property Size'}</label>
                   <select name="size" value={form.size} onChange={handleChange}>
-                    <option value="">Select size...</option>
-                    <option>Single room / Apartment</option>
-                    <option>3–5 bedroom home</option>
-                    <option>Large home / Villa</option>
-                    <option>Small office (1–10 staff)</option>
-                    <option>Medium office (10–50 staff)</option>
-                    <option>Large office / Building</option>
-                    <option>Hotel / Estate</option>
-                    <option>School / Institution</option>
+                    {form.service === 'Home WiFi Setup' ? (
+                      <>
+                        <option value="">Select plan...</option>
+                        <option>Plan 1,500 (Up to 5Mbps)</option>
+                        <option>Plan 2,000 (Up to 10Mbps)</option>
+                        <option>Plan 2,500 (Up to 15Mbps)</option>
+                        <option>Plan 3,000 (Up to 20Mbps)</option>
+                        <option>Plan 4,000 (Up to 40Mbps)</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="">Select size...</option>
+                        <option>Single room / Apartment</option>
+                        <option>3–5 bedroom home</option>
+                        <option>Large home / Villa</option>
+                        <option>Small office (1–10 staff)</option>
+                        <option>Medium office (10–50 staff)</option>
+                        <option>Large office / Building</option>
+                        <option>Hotel / Estate</option>
+                        <option>School / Institution</option>
+                      </>
+                    )}
                   </select>
                 </div>
               </div>
+              {/* Site Survey Booking Option */}
+              <div className="form-group survey-booking-toggle">
+                <label className="checkbox-container">
+                  <input
+                    type="checkbox"
+                    checked={bookSurvey}
+                    onChange={(e) => {
+                      setBookSurvey(e.target.checked)
+                      if (!e.target.checked) {
+                        setForm(f => ({ ...f, surveyDate: '', surveyTime: '' }))
+                      } else {
+                        const tomorrow = new Date()
+                        tomorrow.setDate(tomorrow.getDate() + 1)
+                        const tomorrowString = tomorrow.toISOString().split('T')[0]
+                        setForm(f => ({ ...f, surveyDate: tomorrowString, surveyTime: 'Morning (8:00 AM - 12:00 PM)' }))
+                      }
+                    }}
+                  />
+                  <span className="checkmark" />
+                  <span className="checkbox-label" style={{ fontWeight: '700', textTransform: 'uppercase', fontSize: '11px', color: 'var(--green)', letterSpacing: '0.5px' }}>
+                    📅 Request a Free Site Survey Date & Time
+                  </span>
+                </label>
+              </div>
+
+              {bookSurvey && (
+                <div className="form-row survey-fields-row" style={{ animation: 'slideDownFade 0.25s ease-out' }}>
+                  <div className="form-group">
+                    <label>Preferred Date *</label>
+                    <input
+                      type="date"
+                      name="surveyDate"
+                      value={form.surveyDate}
+                      onChange={handleChange}
+                      min={new Date().toISOString().split('T')[0]}
+                      required={bookSurvey}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Preferred Time Slot *</label>
+                    <select
+                      name="surveyTime"
+                      value={form.surveyTime}
+                      onChange={handleChange}
+                      required={bookSurvey}
+                    >
+                      <option>Morning (8:00 AM - 12:00 PM)</option>
+                      <option>Afternoon (12:00 PM - 4:00 PM)</option>
+                      <option>Late Afternoon (4:00 PM - 6:00 PM)</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
               <div className="form-group"><label>Additional Details</label><textarea name="message" value={form.message} onChange={handleChange} placeholder="Tell us more — current ISP, number of floors, specific challenges, timeline..." rows={4}/></div>
               {status === 'error' && <p className="form-error">Something went wrong. Please WhatsApp us directly.</p>}
               <button type="submit" className="form-submit" disabled={status === 'loading'}>
@@ -187,6 +395,14 @@ export default function Contact() {
                 <span className="summary-label">Location:</span>
                 <span className="summary-value">{submittedData.location}</span>
               </div>
+              {submittedData.surveyDate && (
+                <div className="summary-item">
+                  <span className="summary-label">Survey Slot:</span>
+                  <span className="summary-value" style={{ color: 'var(--green)', fontWeight: 'bold' }}>
+                    {submittedData.surveyDate} at {submittedData.surveyTime}
+                  </span>
+                </div>
+              )}
             </div>
             <button type="button" className="success-close-btn" onClick={() => { setStatus('idle'); setSubmittedData(null); }}>
               Done, Thank You!

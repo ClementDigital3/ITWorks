@@ -48,6 +48,7 @@ export default function Services() {
   const [filter, setFilter] = useState('All Services')
   const [services, setServices] = useState([])
   const [loading, setLoading] = useState(true)
+  const [widgetTab, setWidgetTab] = useState('wifi')
   const revealRef = useReveal([services])
 
   useEffect(() => {
@@ -86,7 +87,7 @@ export default function Services() {
         }
       })
       .catch(err => {
-        console.log('Using local services fallback:', err.message)
+        console.error(err)
         setServices(SERVICES)
       })
       .finally(() => {
@@ -101,10 +102,72 @@ export default function Services() {
       <section className="page-hero">
         <div className="page-hero-bg"/><div className="hero-grid"/>
         <div className="page-hero-inner">
-          <div className="breadcrumb"><Link to="/">Home</Link><span>/</span><span style={{color:'#fff'}}>Services</span></div>
-          <div className="section-label" style={{animation:'fadeUp 0.7s ease both'}}>What We Offer</div>
-          <h1 style={{animation:'fadeUp 0.7s 0.1s ease both'}}>Solutions <span>Built</span><br/>for Real Kenya.</h1>
-          <p style={{animation:'fadeUp 0.7s 0.2s ease both',marginTop:16}}>Six core services. Every one executed with professionalism, precision, and a deep understanding of what connectivity means to homes and businesses across Kenya.</p>
+          <div className="page-hero-left">
+            <div className="breadcrumb"><Link to="/">Home</Link><span>/</span><span style={{color:'#fff'}}>Services</span></div>
+            <div className="section-label" style={{animation:'fadeUp 0.7s ease both'}}>What We Offer</div>
+            <h1 style={{animation:'fadeUp 0.7s 0.1s ease both'}}>Solutions <span>Built</span><br/>for Real Kenya.</h1>
+            <p style={{animation:'fadeUp 0.7s 0.2s ease both',marginTop:16}}>Six core services. Every one executed with professionalism, precision, and a deep understanding of what connectivity means to homes and businesses across Kenya.</p>
+          </div>
+          <div className="page-hero-right">
+            <div className="page-hero-widget">
+              <div className="widget-header">
+                <h3 className="widget-title">Quick <span>Consult</span></h3>
+                <div className="widget-status">
+                  <span className="widget-status-dot"></span>
+                  Online
+                </div>
+              </div>
+              <div className="widget-content">
+                <div className="widget-tabs">
+                  <button 
+                    className={`widget-tab-btn ${widgetTab === 'wifi' ? 'active' : ''}`}
+                    onClick={() => setWidgetTab('wifi')}
+                  >
+                    Home WiFi
+                  </button>
+                  <button 
+                    className={`widget-tab-btn ${widgetTab === 'office' ? 'active' : ''}`}
+                    onClick={() => setWidgetTab('office')}
+                  >
+                    Enterprise
+                  </button>
+                </div>
+                {widgetTab === 'wifi' ? (
+                  <div style={{display:'flex',flexDirection:'column',gap:12,animation:'fadeUp 0.3s ease both'}}>
+                    <p style={{fontSize:13,color:'var(--grey2)',margin:0,lineHeight:1.6}}>Need fast, reliable internet across your home in Eldoret or Rift Valley? Get a professionally managed, high-coverage WiFi layout survey.</p>
+                    <div style={{background:'rgba(255,255,255,0.02)',border:'1px solid var(--black5)',padding:10,borderRadius:8,fontSize:11,color:'var(--grey3)',display:'flex',justifyContent: 'space-between'}}>
+                      <span>Survey Cost</span>
+                      <strong style={{color:'var(--green)'}}>FREE SITE SURVEY</strong>
+                    </div>
+                    <a 
+                      href="https://wa.me/254142445499?text=Hello%20ITWorks%2C%20I%20would%20like%20to%20inquire%20about%20Home%20WiFi%20installation%20services."
+                      target="_blank"
+                      rel="noreferrer"
+                      className="widget-btn"
+                    >
+                      Inquire on WhatsApp
+                    </a>
+                  </div>
+                ) : (
+                  <div style={{display:'flex',flexDirection:'column',gap:12,animation:'fadeUp 0.3s ease both'}}>
+                    <p style={{fontSize:13,color:'var(--grey2)',margin:0,lineHeight:1.6}}>Upgrade your company networks with rack installations, structured cabling, managed switches, and priority SLA contracts.</p>
+                    <div style={{background:'rgba(255,255,255,0.02)',border:'1px solid var(--black5)',padding:10,borderRadius:8,fontSize:11,color:'var(--grey3)',display:'flex',justifyContent: 'space-between'}}>
+                      <span>Response SLA</span>
+                      <strong style={{color:'var(--green)'}}>&lt; 1 Hour Guarantee</strong>
+                    </div>
+                    <a 
+                      href="https://wa.me/254142445499?text=Hello%20ITWorks%2C%20I%20would%20like%20to%20inquire%20about%20Office%20and%20Enterprise%20Network%20solutions."
+                      target="_blank"
+                      rel="noreferrer"
+                      className="widget-btn"
+                    >
+                      Request Business Quote
+                    </a>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 

@@ -254,3 +254,230 @@
   transform: translateY(-1px);
   box-shadow: 0 8px 24px rgba(43, 176, 74, 0.5);
 }
+
+/* ── QUOTE ESTIMATOR WIDGET ──────────────────────────────────────────────── */
+.estimator-widget {
+  padding: 16px !important;
+  gap: 12px !important;
+}
+.estimator-widget .widget-header {
+  padding-bottom: 8px;
+}
+.estimator-widget .widget-tabs {
+  gap: 2px;
+  padding: 2px;
+  background: var(--black4);
+}
+.estimator-widget .widget-tab-btn {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 9.5px;
+  font-weight: 600;
+  padding: 6px 4px;
+  color: var(--grey2);
+  border-radius: 4px;
+  transition: all var(--transition);
+}
+.estimator-widget .widget-tab-btn svg {
+  width: 14px;
+  height: 14px;
+  opacity: 0.7;
+  transition: opacity var(--transition);
+}
+.estimator-widget .widget-tab-btn.active svg {
+  opacity: 1;
+}
+.estimator-widget .tab-label-text {
+  font-size: 9px;
+  white-space: nowrap;
+  letter-spacing: 0.1px;
+}
+.estimator-widget .widget-field-group {
+  gap: 4px;
+}
+.estimator-widget .widget-select {
+  padding: 8px 12px;
+  font-size: 13px;
+}
+.estimator-display-card {
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid var(--black4);
+  border-radius: 8px;
+  padding: 12px;
+  text-align: left;
+}
+.estimator-price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  border-bottom: 1px dashed var(--black5);
+  padding-bottom: 8px;
+}
+.estimator-price-label {
+  font-size: 9.5px;
+  color: var(--grey3);
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+  letter-spacing: 0.5px;
+}
+.estimator-price-val {
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--green);
+}
+.estimator-hardware {
+  margin-bottom: 0px;
+}
+.estimator-hw-label {
+  font-size: 9px;
+  color: var(--grey3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+  font-family: var(--font-mono);
+}
+.estimator-hw-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.estimator-hw-list li {
+  font-size: 12px;
+  color: var(--grey1);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.estimator-hw-list li::before {
+  content: "•";
+  color: var(--green);
+  font-weight: bold;
+}
+.estimator-widget .widget-btn {
+  padding: 10px 14px;
+  font-size: 12px;
+  margin-top: 0;
+  border-radius: 6px;
+}
+.prefill-badge {
+  background: rgba(43, 176, 74, 0.08);
+  border: 1px solid rgba(43, 176, 74, 0.2);
+  color: var(--green);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: fadeIn 0.3s ease;
+}
+
+.widget-service-desc {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--grey2);
+  margin: 0;
+}
+.estimator-display-card.quote-only,
+.estimator-display-card.soon-only {
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.contact-reviews-carousel {
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeUp 0.8s 0.2s ease both;
+}
+
+/* SITE SURVEY BOOKING STYLES */
+.survey-booking-toggle {
+  margin-top: 10px;
+  margin-bottom: 5px;
+}
+
+.survey-fields-row {
+  background: rgba(43, 176, 74, 0.03);
+  border: 1px dashed rgba(43, 176, 74, 0.25);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 8px;
+  animation: slideDownFade 0.25s ease-out;
+}
+
+@keyframes slideDownFade {
+  from { transform: translateY(-8px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* CUSTOM CHECKBOX FOR PUBLIC FORM */
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox-container input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.checkbox-container .checkmark {
+  height: 20px;
+  width: 20px;
+  background-color: var(--black3);
+  border: 1.5px solid var(--black5);
+  border-radius: 4px;
+  display: inline-block;
+  position: relative;
+  transition: all var(--transition);
+}
+
+.checkbox-container:hover input ~ .checkmark {
+  border-color: var(--green);
+}
+
+.checkbox-container input:checked ~ .checkmark {
+  background-color: var(--green);
+  border-color: var(--green);
+}
+
+.checkbox-container .checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+  left: 6px;
+  top: 2px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.checkbox-container input:checked ~ .checkmark:after {
+  display: block;
+}
+
+

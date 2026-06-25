@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useReveal } from '../hooks/useReveal'
 import './Home.css'
 
@@ -61,11 +61,112 @@ function Counter({ target, suffix }) {
   return <span className="stat-num"><span ref={ref}>0</span><span className="plus">{suffix}</span></span>
 }
 
+const ESTIMATES = {
+  'Home WiFi Setup': {
+    label: 'Home WiFi',
+    type: 'estimator',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginBottom: 2 }}>
+        <path d="M5 12.55a11 11 0 0 1 14.08 0" />
+        <path d="M1.42 9a16 16 0 0 1 21.16 0" />
+        <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
+        <line x1="12" y1="20" x2="12.01" y2="20" strokeWidth="3" />
+      </svg>
+    ),
+    options: [
+      {
+        size: 'Plan 1,500 (Up to 5Mbps)',
+        price: 'KES 1,500/mo',
+        hardware: ['1x Dual-Band WiFi Router', 'Flat Cat6 fiber-drop cable', 'Setup & Configuration (KES 1,500)']
+      },
+      {
+        size: 'Plan 2,000 (Up to 10Mbps)',
+        price: 'KES 2,000/mo',
+        hardware: ['1x Dual-Band WiFi Router', 'Flat Cat6 fiber-drop cable', 'Setup & Configuration (KES 1,500)']
+      },
+      {
+        size: 'Plan 2,500 (Up to 15Mbps)',
+        price: 'KES 2,500/mo',
+        hardware: ['1x High-Gain WiFi Router', 'Flat Cat6 fiber-drop cable', 'Setup & Configuration (KES 1,500)']
+      },
+      {
+        size: 'Plan 3,000 (Up to 20Mbps)',
+        price: 'KES 3,000/mo',
+        hardware: ['1x High-Gain WiFi Router', 'Flat Cat6 fiber-drop cable', 'Setup & Configuration (KES 1,500)']
+      },
+      {
+        size: 'Plan 4,000 (Up to 40Mbps)',
+        price: 'KES 4,000/mo',
+        hardware: ['1x Gigabit Gateway Router', '1x Ceiling PoE Access Point', 'Setup & Configuration (KES 1,500)']
+      }
+    ]
+  },
+  'Office & Enterprise Networks': {
+    label: 'Office Network',
+    type: 'quote',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginBottom: 2 }}>
+        <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
+        <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
+        <line x1="6" y1="6" x2="6.01" y2="6" strokeWidth="2" />
+        <line x1="6" y1="18" x2="6.01" y2="18" strokeWidth="2" />
+      </svg>
+    ),
+    description: 'Enterprise networks require custom designs, managed switches, VLAN configurations, and cabling runs. We offer a free physical site survey to provide a detailed custom quote.'
+  },
+  'CCTV & Surveillance': {
+    label: 'CCTV Security',
+    type: 'soon',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginBottom: 2 }}>
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+        <circle cx="12" cy="13" r="4" />
+      </svg>
+    ),
+    description: 'High-definition IP security cameras, remote mobile app viewing, and secure local/cloud storage. Launching soon in Eldoret. Register your interest for priority booking.'
+  },
+  'Hotspot & Captive Portal': {
+    label: 'WiFi Hotspot',
+    type: 'soon',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginBottom: 2 }}>
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+        <path d="M2 12h20" />
+      </svg>
+    ),
+    description: 'Custom captive portals, automated M-Pesa voucher systems, and client bandwidth limits for hotels, restaurants, and apartments. Launching soon. Register your interest.'
+  }
+}
+
 export default function Home() {
   const revealRef = useReveal()
+  const navigate = useNavigate()
   const [stats, setStats] = useState(STATS)
+  const [reviews, setReviews] = useState(TESTIMONIALS)
+
+  // Review submission state
+  const [showReviewModal, setShowReviewModal] = useState(false)
+  const [reviewForm, setReviewForm] = useState({ name: '', role: '', text: '', rating: 5 })
+  const [reviewError, setReviewError] = useState('')
+  const [reviewSuccess, setReviewSuccess] = useState(false)
+  const [reviewLoading, setReviewLoading] = useState(false)
+
+  // Estimator States
+  const [selectedService, setSelectedService] = useState('Home WiFi Setup')
+  const [selectedSizeIndex, setSelectedSizeIndex] = useState(0)
+
+  const handleApplyEstimate = () => {
+    const currentService = ESTIMATES[selectedService]
+    let sizeParam = ''
+    if (currentService.type === 'estimator') {
+      sizeParam = currentService.options[selectedSizeIndex].size
+    }
+    navigate(`/contact?service=${encodeURIComponent(selectedService)}&size=${encodeURIComponent(sizeParam)}&prefill=true`)
+  }
 
   useEffect(() => {
+    // Fetch stats
     fetch('/api/stats')
       .then(res => {
         if (!res.ok) throw new Error('API error')
@@ -81,7 +182,52 @@ export default function Home() {
         }
       })
       .catch(err => console.log('Using local stats fallback:', err.message))
+
+    // Fetch approved reviews
+    fetch('/api/reviews')
+      .then(res => {
+        if (!res.ok) throw new Error('API error')
+        return res.json()
+      })
+      .then(data => {
+        if (data && data.length > 0) {
+          setReviews(data)
+        }
+      })
+      .catch(err => console.log('Using local testimonials fallback:', err.message))
   }, [])
+
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault()
+    setReviewError('')
+    setReviewLoading(true)
+
+    if (!reviewForm.name || !reviewForm.role || !reviewForm.text) {
+      setReviewError('Please fill in all fields.')
+      setReviewLoading(false)
+      return
+    }
+
+    try {
+      const res = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reviewForm)
+      })
+
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to submit review.')
+      }
+
+      setReviewSuccess(true)
+      setReviewForm({ name: '', role: '', text: '', rating: 5 })
+    } catch (err) {
+      setReviewError(err.message)
+    } finally {
+      setReviewLoading(false)
+    }
+  }
 
   return (
     <main ref={revealRef}>
@@ -90,70 +236,150 @@ export default function Home() {
       <section className="hero">
         <div className="hero-bg" />
         <div className="hero-grid" />
-        <div className="hero-wifi">
-          <svg viewBox="0 0 400 400" className="hw-svg">
-            <defs>
-              <filter id="gGlow"><feGaussianBlur stdDeviation="6" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-              <filter id="oGlow"><feGaussianBlur stdDeviation="5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-              <radialGradient id="bgGlow" cx="50%" cy="62%" r="55%">
-                <stop offset="0%" stopColor="#2BB04A" stopOpacity="0.2"/>
-                <stop offset="100%" stopColor="#2BB04A" stopOpacity="0"/>
-              </radialGradient>
-            </defs>
-            <ellipse cx="200" cy="248" rx="175" ry="155" fill="url(#bgGlow)" className="hw-bg"/>
-            <path d="M 28 272 Q 200 38 372 272" fill="none" stroke="#2BB04A" strokeWidth="5" strokeLinecap="round" filter="url(#gGlow)" className="hw-arc hw-a1"/>
-            <path d="M 72 284 Q 200 88 328 284" fill="none" stroke="#2BB04A" strokeWidth="4.5" strokeLinecap="round" filter="url(#gGlow)" className="hw-arc hw-a2"/>
-            <path d="M 116 296 Q 200 138 284 296" fill="none" stroke="#2BB04A" strokeWidth="4" strokeLinecap="round" filter="url(#gGlow)" className="hw-arc hw-a3"/>
-            <path d="M 156 308 Q 200 185 244 308" fill="none" stroke="#2BB04A" strokeWidth="3.5" strokeLinecap="round" filter="url(#gGlow)" className="hw-arc hw-a4"/>
-            <path d="M 177 316 Q 200 220 223 316" fill="none" stroke="#2BB04A" strokeWidth="3" strokeLinecap="round" filter="url(#gGlow)" className="hw-arc hw-a5"/>
-            <circle cx="200" cy="332" r="28" fill="none" stroke="#E8401A" strokeWidth="1.5" opacity="0.4" className="hw-ring hw-r1"/>
-            <circle cx="200" cy="332" r="18" fill="none" stroke="#E8401A" strokeWidth="2" opacity="0.7" className="hw-ring hw-r2"/>
-            <circle cx="200" cy="332" r="11" fill="#E8401A" filter="url(#oGlow)" className="hw-dot"/>
-            <circle cx="200" cy="332" r="6" fill="#ff7a55"/>
-          </svg>
-          <div className="hw-badge">
-            <div className="hw-badge-label">Network Uptime</div>
-            <div className="hw-badge-val">99.9%</div>
-            <div className="hw-badge-sub">Guaranteed reliability</div>
-          </div>
-          <div className="hw-badge2">
-            <div className="hw-b2-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        <div className="hero-inner">
+          <div className="hero-content">
+            <div className="hero-eyebrow">
+              <div className="hero-eyebrow-dot" />
+              <span>Eldoret's #1 Connectivity Provider</span>
             </div>
-            <div>
-              <div className="hw-b2-title">Fast Setup</div>
-              <div className="hw-b2-sub">Same-day installation</div>
+            <h1 className="hero-title">
+              <span className="line1">We Keep</span>
+              <span className="line2">You Connected.</span>
+              <span className="line3">Always.</span>
+            </h1>
+            <p className="hero-sub">Professional WiFi installation, enterprise networking, and hotspot deployment across Eldoret and North Rift Kenya. <strong>Reliable. Fast. Professionally Done.</strong></p>
+            <div className="hero-actions">
+              <Link to="/contact" className="btn-primary">
+                Get a Free Quote
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </Link>
+              <Link to="/projects" className="btn-ghost">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                See Our Work
+              </Link>
             </div>
           </div>
-          <div className="hw-live">
-            <div className="hw-live-dot" />
-            <div className="hw-live-text">Live Network</div>
-          </div>
-          <div className="hw-bars">
-            <div className="hw-bar"/><div className="hw-bar"/>
-            <div className="hw-bar"/><div className="hw-bar"/>
-          </div>
-        </div>
-        <div className="hero-content">
-          <div className="hero-eyebrow">
-            <div className="hero-eyebrow-dot" />
-            <span>Eldoret's #1 Connectivity Provider</span>
-          </div>
-          <h1 className="hero-title">
-            <span className="line1">We Keep</span>
-            <span className="line2">You Connected.</span>
-            <span className="line3">Always.</span>
-          </h1>
-          <p className="hero-sub">Professional WiFi installation, enterprise networking, and hotspot deployment across Eldoret and North Rift Kenya. <strong>Reliable. Fast. Professionally Done.</strong></p>
-          <div className="hero-actions">
-            <Link to="/contact" className="btn-primary">
-              Get a Free Quote
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-            </Link>
-            <Link to="/projects" className="btn-ghost">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-              See Our Work
-            </Link>
+
+          <div className="hero-reviews-carousel page-hero-widget estimator-widget">
+            <div className="widget-header">
+              <h3 className="widget-title">Quote <span>Estimator</span></h3>
+              <div className="widget-status">
+                <span className="widget-status-dot" style={{ background: '#2bb04a', boxShadow: '0 0 8px #2bb04a' }}></span>
+                Interactive
+              </div>
+            </div>
+            <div className="widget-content">
+              {/* Service Tab Selectors */}
+              <div className="widget-tabs">
+                {Object.keys(ESTIMATES).map(serviceKey => (
+                  <button
+                    key={serviceKey}
+                    type="button"
+                    className={`widget-tab-btn ${selectedService === serviceKey ? 'active' : ''}`}
+                    onClick={() => {
+                      setSelectedService(serviceKey)
+                      setSelectedSizeIndex(0)
+                    }}
+                    title={ESTIMATES[serviceKey].label}
+                  >
+                    {ESTIMATES[serviceKey].icon}
+                    <span className="tab-label-text">{ESTIMATES[serviceKey].label}</span>
+                  </button>
+                ))}
+              </div>
+
+              {ESTIMATES[selectedService].type === 'estimator' ? (
+                <>
+                  {/* Property Size Selector */}
+                  <div className="widget-field-group">
+                    <label className="widget-field-label">Internet Plan / Speed</label>
+                    <select
+                      className="widget-select"
+                      value={selectedSizeIndex}
+                      onChange={(e) => setSelectedSizeIndex(parseInt(e.target.value))}
+                    >
+                      {ESTIMATES[selectedService].options.map((opt, idx) => (
+                        <option key={idx} value={idx}>
+                          {opt.size}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Estimate display */}
+                  <div className="estimator-display-card">
+                    <div className="estimator-price-row">
+                      <span className="estimator-price-label">Est. Setup Cost</span>
+                      <span className="estimator-price-val">{ESTIMATES[selectedService].options[selectedSizeIndex].price}</span>
+                    </div>
+                    
+                    <div className="estimator-hardware">
+                      <div className="estimator-hw-label">Recommended Hardware:</div>
+                      <ul className="estimator-hw-list">
+                        {ESTIMATES[selectedService].options[selectedSizeIndex].hardware.map((item, idx) => (
+                          <li key={idx}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="widget-btn"
+                    onClick={handleApplyEstimate}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginRight: 4 }}>
+                      <path d="M20 6L9 17l-5-5" />
+                    </svg>
+                    Prefill Quote Form
+                  </button>
+                </>
+              ) : ESTIMATES[selectedService].type === 'soon' ? (
+                <>
+                  <div className="estimator-display-card soon-only">
+                    <div className="estimator-price-row">
+                      <span className="estimator-price-label">Availability</span>
+                      <span className="estimator-price-val" style={{ color: '#3b82f6', fontSize: '12px', textTransform: 'uppercase', fontWeight: 'bold', background: 'rgba(59,130,246,0.1)', padding: '4px 8px', borderRadius: '4px' }}>Coming Soon</span>
+                    </div>
+                    <p className="widget-service-desc">{ESTIMATES[selectedService].description}</p>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="widget-btn"
+                    style={{ background: '#3b82f6', borderColor: '#3b82f6', color: '#fff' }}
+                    onClick={handleApplyEstimate}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginRight: 4 }}>
+                      <path d="M20 6L9 17l-5-5" />
+                    </svg>
+                    Register Interest
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="estimator-display-card quote-only">
+                    <div className="estimator-price-row">
+                      <span className="estimator-price-label">Cost Estimate</span>
+                      <span className="estimator-price-val" style={{ color: 'var(--orange)' }}>Custom Quote</span>
+                    </div>
+                    <p className="widget-service-desc">{ESTIMATES[selectedService].description}</p>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="widget-btn"
+                    style={{ background: 'var(--orange)', borderColor: 'var(--orange)', color: '#000' }}
+                    onClick={handleApplyEstimate}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginRight: 4 }}>
+                      <path d="M20 6L9 17l-5-5" />
+                    </svg>
+                    Request Custom Quote
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </section>
@@ -230,18 +456,29 @@ export default function Home() {
 
       {/* TESTIMONIALS */}
       <section className="testimonials-section">
-        <div className="testi-header">
-          <div className="section-label reveal">What Clients Say</div>
-          <h2 className="section-title reveal reveal-delay-1">Real Results,<br/><span>Real People</span></h2>
+        <div className="testi-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '24px' }}>
+          <div>
+            <div className="section-label reveal">What Clients Say</div>
+            <h2 className="section-title reveal reveal-delay-1" style={{ margin: 0 }}>Real Results,<br/><span>Real People</span></h2>
+          </div>
+          <button 
+            className="cta-btn cta-btn-call reveal reveal-delay-2" 
+            onClick={() => setShowReviewModal(true)} 
+            style={{ border: '1px solid var(--black5)', padding: '12px 24px', cursor: 'pointer', fontFamily: 'inherit' }}
+          >
+            Write a Review
+          </button>
         </div>
         <div className="testi-grid">
-          {TESTIMONIALS.map((t, i) => (
-            <div className={`testi-card reveal reveal-delay-${i}`} key={t.name}>
+          {reviews.map((t, i) => (
+            <div className={`testi-card reveal reveal-delay-${i}`} key={t._id || t.name}>
               <div className="testi-quote">"</div>
               <p className="testi-text">{t.text}</p>
-              <div className="testi-stars">{'★'.repeat(5)}</div>
+              <div className="testi-stars">
+                {'★'.repeat(t.rating || 5)}{'☆'.repeat(5 - (t.rating || 5))}
+              </div>
               <div className="testi-author">
-                <div className="testi-avatar">{t.initials}</div>
+                <div className="testi-avatar">{t.initials || (t.name ? t.name.substring(0, 2).toUpperCase() : 'C')}</div>
                 <div>
                   <div className="testi-name">{t.name}</div>
                   <div className="testi-role">{t.role}</div>
@@ -272,6 +509,101 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* REVIEW MODAL */}
+      {showReviewModal && (
+        <div className="modal-overlay" onClick={() => { setShowReviewModal(false); setReviewSuccess(false); setReviewError(''); }}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => { setShowReviewModal(false); setReviewSuccess(false); setReviewError(''); }}>&times;</button>
+            <div className="modal-content">
+              {!reviewSuccess ? (
+                <>
+                  <h3 className="modal-title">Write a Review</h3>
+                  <p className="modal-desc">Share your experience with ITWORKS. Your review will be published after verification.</p>
+                  
+                  {reviewError && <div className="form-error">{reviewError}</div>}
+
+                  <form onSubmit={handleReviewSubmit}>
+                    <div className="form-group" style={{ marginBottom: '16px' }}>
+                      <label style={{ fontSize: '11px', color: 'var(--grey2)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px', display: 'block' }}>Your Name</label>
+                      <input 
+                        type="text" 
+                        required 
+                        placeholder="e.g. James Mutai"
+                        value={reviewForm.name} 
+                        onChange={(e) => setReviewForm({ ...reviewForm, name: e.target.value })} 
+                        style={{ background: 'var(--black4)', border: '1px solid var(--black5)', borderRadius: 'var(--radius)', padding: '13px 16px', color: 'var(--white)', fontSize: '15px', outline: 'none', width: '100%' }}
+                      />
+                    </div>
+
+                    <div className="form-group" style={{ marginBottom: '16px' }}>
+                      <label style={{ fontSize: '11px', color: 'var(--grey2)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px', display: 'block' }}>Your Role / Location</label>
+                      <input 
+                        type="text" 
+                        required 
+                        placeholder="e.g. Homeowner, Eldoret"
+                        value={reviewForm.role} 
+                        onChange={(e) => setReviewForm({ ...reviewForm, role: e.target.value })} 
+                        style={{ background: 'var(--black4)', border: '1px solid var(--black5)', borderRadius: 'var(--radius)', padding: '13px 16px', color: 'var(--white)', fontSize: '15px', outline: 'none', width: '100%' }}
+                      />
+                    </div>
+
+                    <div className="form-group" style={{ marginBottom: '16px' }}>
+                      <label style={{ fontSize: '11px', color: 'var(--grey2)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px', display: 'block' }}>Rating</label>
+                      <div className="rating-selector">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <span 
+                            key={star} 
+                            className={`rating-star ${reviewForm.rating >= star ? 'active' : ''}`}
+                            onClick={() => setReviewForm({ ...reviewForm, rating: star })}
+                            style={{ cursor: 'pointer', fontSize: '24px', transition: 'color var(--transition)' }}
+                          >
+                            ★
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="form-group" style={{ marginBottom: '24px' }}>
+                      <label style={{ fontSize: '11px', color: 'var(--grey2)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px', display: 'block' }}>Your Feedback</label>
+                      <textarea 
+                        required 
+                        placeholder="What did you like about our services?"
+                        value={reviewForm.text} 
+                        onChange={(e) => setReviewForm({ ...reviewForm, text: e.target.value })} 
+                        style={{ background: 'var(--black4)', border: '1px solid var(--black5)', borderRadius: 'var(--radius)', padding: '13px 16px', color: 'var(--white)', fontSize: '15px', outline: 'none', width: '100%', resize: 'vertical', minHeight: '100px' }}
+                      />
+                    </div>
+
+                    <button 
+                      type="submit" 
+                      className="form-submit" 
+                      disabled={reviewLoading}
+                      style={{ width: '100%', padding: '16px 28px', background: 'var(--green)', color: 'var(--white)', fontSize: '15px', fontWeight: 700, borderRadius: 'var(--radius)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', transition: 'all var(--transition)', boxShadow: '0 0 28px rgba(43,176,74,0.3)' }}
+                    >
+                      {reviewLoading ? 'Submitting...' : 'Submit Review'}
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <div className="form-success" style={{ textAlign: 'center', padding: '10px 0' }}>
+                  <p style={{ color: 'var(--green)', fontWeight: 600, fontSize: '20px', marginBottom: '12px' }}>Thank You!</p>
+                  <p style={{ fontSize: '14px', color: 'var(--grey2)', lineHeight: '1.6', margin: '0 auto 24px', maxWidth: '360px' }}>
+                    Your review has been successfully submitted and is pending admin moderation.
+                  </p>
+                  <button 
+                    className="form-submit" 
+                    onClick={() => { setShowReviewModal(false); setReviewSuccess(false); }}
+                    style={{ width: '100%', padding: '16px 28px', background: 'var(--green)', color: 'var(--white)', fontSize: '15px', fontWeight: 700, borderRadius: 'var(--radius)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all var(--transition)' }}
+                  >
+                    Close
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }

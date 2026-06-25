@@ -3,10 +3,14 @@
   "version": "1.0.0",
   "description": "ITWORKS Technologies Limited — Full Stack MERN Website",
   "scripts": {
-    "client": "cd client && npm run dev",
-    "server": "cd server && npm run dev",
-    "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "install-all": "cd client && npm install && cd ../server && npm install"
+    "install-all": "npm install --prefix client && npm install --prefix server",
+    "build": "npm run install-all && npm run build --prefix client",
+    "start": "node server/index.js",
+    "server": "node server/index.js",
+    "server:dev": "nodemon server/index.js",
+    "client:dev": "npm run dev --prefix client",
+    "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
+    "seed": "node server/seed.js"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

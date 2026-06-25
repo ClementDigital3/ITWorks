@@ -100,6 +100,8 @@ export default function Projects() {
 
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedLocation, setSelectedLocation] = useState('all')
+  const [surveyTown, setSurveyTown] = useState('Eldoret')
+  const [surveyService, setSurveyService] = useState('Home WiFi Setup')
 
   const getTown = (loc) => {
     if (!loc) return 'Unknown'
@@ -147,10 +149,60 @@ export default function Projects() {
       <section className="page-hero">
         <div className="page-hero-bg"/><div className="hero-grid"/>
         <div className="page-hero-inner">
-          <div className="breadcrumb"><Link to="/">Home</Link><span>/</span><span style={{color:'#fff'}}>Projects</span></div>
-          <div className="section-label" style={{animation:'fadeUp 0.7s ease both'}}>Our Work</div>
-          <h1 style={{animation:'fadeUp 0.7s 0.1s ease both'}}>Our Work<br/><span>Speaks</span><br/>For Itself.</h1>
-          <p style={{animation:'fadeUp 0.7s 0.2s ease both',marginTop:16}}>From single-room home setups to full enterprise deployments — every project was delivered on time, professionally installed, and built to last.</p>
+          <div className="page-hero-left">
+            <div className="breadcrumb"><Link to="/">Home</Link><span>/</span><span style={{color:'#fff'}}>Projects</span></div>
+            <div className="section-label" style={{animation:'fadeUp 0.7s ease both'}}>Our Work</div>
+            <h1 style={{animation:'fadeUp 0.7s 0.1s ease both'}}>Our Work<br/><span>Speaks</span><br/>For Itself.</h1>
+            <p style={{animation:'fadeUp 0.7s 0.2s ease both',marginTop:16}}>From single-room home setups to full enterprise deployments — every project was delivered on time, professionally installed, and built to last.</p>
+          </div>
+          <div className="page-hero-right">
+            <div className="page-hero-widget">
+              <div className="widget-header">
+                <h3 className="widget-title">Survey <span>Request</span></h3>
+                <div className="widget-status">
+                  <span className="widget-status-dot"></span>
+                  Active
+                </div>
+              </div>
+              <div className="widget-content">
+                <div className="widget-field-group">
+                  <span className="widget-field-label">Select Town</span>
+                  <select 
+                    className="widget-select" 
+                    value={surveyTown}
+                    onChange={(e) => setSurveyTown(e.target.value)}
+                  >
+                    <option value="Eldoret">Eldoret</option>
+                    <option value="Kitale">Kitale</option>
+                    <option value="Nakuru">Nakuru</option>
+                    <option value="Kapsabet">Kapsabet</option>
+                    <option value="Iten">Iten</option>
+                  </select>
+                </div>
+                <div className="widget-field-group">
+                  <span className="widget-field-label">Service Needed</span>
+                  <select 
+                    className="widget-select" 
+                    value={surveyService}
+                    onChange={(e) => setSurveyService(e.target.value)}
+                  >
+                    <option value="Home WiFi Setup">Home WiFi Setup</option>
+                    <option value="Office Network Layout">Office Network Layout</option>
+                    <option value="CCTV Installation">CCTV Installation</option>
+                    <option value="M-Pesa Hotspot Billing">M-Pesa Hotspot Billing</option>
+                  </select>
+                </div>
+                <a 
+                  href={`https://wa.me/254142445499?text=Hello%20ITWorks%2C%20I%20would%20like%20to%20request%20a%20free%20site%20survey%20for%20${encodeURIComponent(surveyService)}%20in%20${encodeURIComponent(surveyTown)}.`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="widget-btn"
+                >
+                  Request Free Survey
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 

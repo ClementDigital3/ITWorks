@@ -87,9 +87,12 @@ export default function Footer() {
 
       <div className="footer-bottom">
         <p>© 2026 <span>ITWORKS Technologies Limited</span>. All rights reserved. Eldoret, Kenya.</p>
+        <p>Built and managed by <a href="https://wa.me/254746195839" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--green)', textDecoration: 'none', fontWeight: 600 }}>DevClaud</a></p>
         <div className="footer-badges">
           <span className="badge">v2.0</span>
-          <span className="badge">MERN</span>
+          <a href="https://wa.me/254746195839" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+            <span className="badge" style={{ cursor: 'pointer' }}>DevClaud</span>
+          </a>
           <span className="badge">Eldoret, KE</span>
         </div>
       </div>

@@ -3,7 +3,7 @@ const nodemailer = require('nodemailer')
 
 exports.submitContact = async (req, res) => {
   try {
-    const { firstName, lastName, phone, email, service, location, size, message } = req.body
+    const { firstName, lastName, phone, email, service, location, size, message, surveyDate, surveyTime } = req.body
 
     // Validate required fields
     if (!firstName || !lastName || !phone || !service || !location) {
@@ -13,7 +13,8 @@ exports.submitContact = async (req, res) => {
     // Save to MongoDB
     const contact = await Contact.create({
       firstName, lastName, phone, email,
-      service, location, size, message
+      service, location, size, message,
+      surveyDate, surveyTime
     })
 
     // Send notification email (if configured)
@@ -38,6 +39,8 @@ exports.submitContact = async (req, res) => {
             <tr><td style="padding:8px;border:1px solid #ddd"><strong>Service</strong></td><td style="padding:8px;border:1px solid #ddd">${service}</td></tr>
             <tr><td style="padding:8px;border:1px solid #ddd"><strong>Location</strong></td><td style="padding:8px;border:1px solid #ddd">${location}</td></tr>
             <tr><td style="padding:8px;border:1px solid #ddd"><strong>Property Size</strong></td><td style="padding:8px;border:1px solid #ddd">${size || 'Not specified'}</td></tr>
+            ${surveyDate ? `<tr><td style="padding:8px;border:1px solid #ddd"><strong>Requested Survey Date</strong></td><td style="padding:8px;border:1px solid #ddd">${surveyDate}</td></tr>` : ''}
+            ${surveyTime ? `<tr><td style="padding:8px;border:1px solid #ddd"><strong>Requested Survey Time</strong></td><td style="padding:8px;border:1px solid #ddd">${surveyTime}</td></tr>` : ''}
             <tr><td style="padding:8px;border:1px solid #ddd"><strong>Message</strong></td><td style="padding:8px;border:1px solid #ddd">${message || 'No message'}</td></tr>
           </table>
           <p style="margin-top:16px;color:#666">Submitted: ${new Date().toLocaleString('en-KE', {timeZone:'Africa/Nairobi'})}</p>

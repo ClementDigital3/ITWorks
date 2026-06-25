@@ -9,6 +9,8 @@ const contactSchema = new mongoose.Schema({
   location:   { type: String, required: true, trim: true },
   size:       { type: String },
   message:    { type: String, trim: true },
+  surveyDate: { type: String, trim: true },
+  surveyTime: { type: String, trim: true },
   status:     { type: String, enum: ['new','contacted','converted','closed'], default: 'new' },
   createdAt:  { type: Date, default: Date.now }
 })

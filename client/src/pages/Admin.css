@@ -1178,4 +1178,61 @@
   border: 1px solid rgba(43, 176, 74, 0.25);
 }
 
+.export-leads-btn {
+  background: rgba(43, 176, 74, 0.08);
+  border: 1.5px solid rgba(43, 176, 74, 0.25);
+  color: var(--green);
+  padding: 10px 16px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all var(--transition);
+  height: 42px;
+}
+
+.export-leads-btn:hover {
+  background: var(--green);
+  color: var(--white);
+  box-shadow: 0 4px 12px rgba(43, 176, 74, 0.3);
+}
+
+/* PREMIUM SVG ANALYTICS CHARTS */
+.chart-donut-group {
+  position: relative;
+}
+.donut-tooltip {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.chart-donut-group:hover .donut-tooltip {
+  opacity: 1;
+}
+
+.chart-bar-group {
+  position: relative;
+}
+.bar-tooltip {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.chart-bar-group:hover .bar-tooltip {
+  opacity: 1;
+}
+
+.svg-bar {
+  opacity: 0.9;
+  transition: opacity 0.2s ease, filter 0.2s ease;
+}
+.svg-bar:hover {
+  opacity: 1;
+  filter: brightness(1.15);
+}
+
 

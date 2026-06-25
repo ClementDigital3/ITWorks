@@ -11,7 +11,8 @@ const teamMemberSchema = new mongoose.Schema({
   role: { type: String, required: true },
   bio: { type: String, required: true },
   initials: { type: String, required: true },
-  color: { type: String, default: 'av-green' }
+  color: { type: String, default: 'av-green' },
+  avatarUrl: { type: String, default: '' }
 })
 
 const aboutSchema = new mongoose.Schema({

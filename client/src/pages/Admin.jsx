@@ -9,10 +9,11 @@ export default function Admin() {
   const [authLoading, setAuthLoading] = useState(false)
   const [authError, setAuthError] = useState('')
 
-  const [activeTab, setActiveTab] = useState('projects') // 'projects' | 'services' | 'about' | 'contacts'
+  const [activeTab, setActiveTab] = useState('projects') // 'projects' | 'services' | 'about' | 'contacts' | 'reviews' | 'analytics'
   const [projects, setProjects] = useState([])
   const [services, setServices] = useState([])
   const [contacts, setContacts] = useState([])
+  const [adminReviews, setAdminReviews] = useState([])
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState(null) // { text: string, type: 'success' | 'error' }
 
@@ -116,6 +117,23 @@ export default function Admin() {
       } else {
         setContacts([])
       }
+
+      // Fetch Reviews securely
+      const reviewRes = await fetch('/api/reviews/admin', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (reviewRes.status === 401) {
+        localStorage.removeItem('adminToken')
+        setToken('')
+        showMsg('Session expired. Please log in again.', 'error')
+        return
+      }
+      const reviewData = await reviewRes.json()
+      if (Array.isArray(reviewData)) {
+        setAdminReviews(reviewData)
+      } else {
+        setAdminReviews([])
+      }
     } catch (err) {
       showMsg('Failed to load database items.', 'error')
     } finally {
@@ -189,6 +207,133 @@ export default function Admin() {
     } catch (err) {
       showMsg('Network error occurred.', 'error')
     }
+  }
+
+  const handleReviewStatusUpdate = async (id, newStatus) => {
+    try {
+      const res = await fetch(`/api/reviews/admin/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ status: newStatus })
+      })
+
+      if (res.status === 401) {
+        localStorage.removeItem('adminToken')
+        setToken('')
+        showMsg('Session expired. Please log in again.', 'error')
+        return
+      }
+
+      const data = await res.json()
+      if (res.ok && (data._id || data.success)) {
+        showMsg('Review status updated successfully!')
+        setAdminReviews(prev => prev.map(r => r._id === id ? { ...r, status: newStatus } : r))
+      } else {
+        showMsg(data.error || 'Failed to update review status.', 'error')
+      }
+    } catch (err) {
+      showMsg('Network error occurred.', 'error')
+    }
+  }
+
+  const handleReviewDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this review?')) return
+    try {
+      const res = await fetch(`/api/reviews/admin/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (res.status === 401) {
+        localStorage.removeItem('adminToken')
+        setToken('')
+        showMsg('Session expired. Please log in again.', 'error')
+        return
+      }
+
+      const data = await res.json()
+      if (res.ok && data.success) {
+        showMsg('Review deleted successfully!')
+        setAdminReviews(prev => prev.filter(r => r._id !== id))
+      } else {
+        showMsg(data.error || 'Failed to delete review.', 'error')
+      }
+    } catch (err) {
+      showMsg('Network error occurred.', 'error')
+    }
+  }
+
+  const handleExportLeads = () => {
+    const filtered = contacts.filter(c => {
+      const name = `${c.firstName || ''} ${c.lastName || ''}`.toLowerCase()
+      const phone = (c.phone || '').toLowerCase()
+      const location = (c.location || '').toLowerCase()
+      const query = contactSearch.toLowerCase()
+      
+      const matchesSearch = name.includes(query) || phone.includes(query) || location.includes(query)
+      const matchesStatus = contactStatusFilter === 'all' || c.status === contactStatusFilter
+      const matchesService = contactServiceFilter === 'all' || c.service === contactServiceFilter
+      
+      return matchesSearch && matchesStatus && matchesService
+    })
+
+    if (filtered.length === 0) {
+      showMsg('No leads available to export.', 'error')
+      return
+    }
+
+    const escapeCSV = (val) => {
+      if (val === null || val === undefined) return ''
+      let str = String(val)
+      str = str.replace(/"/g, '""')
+      if (str.includes(',') || str.includes('\n') || str.includes('\r') || str.includes('"')) {
+        return `"${str}"`
+      }
+      return str
+    }
+
+    const headers = ['Date', 'First Name', 'Last Name', 'Phone', 'Email', 'Service', 'Location', 'Size', 'Survey Date', 'Survey Time', 'Status', 'Message']
+    
+    const rows = filtered.map(c => [
+      new Date(c.createdAt).toLocaleDateString('en-KE', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      }),
+      c.firstName || '',
+      c.lastName || '',
+      c.phone || '',
+      c.email || '',
+      c.service || '',
+      c.location || '',
+      c.size || '',
+      c.surveyDate || '',
+      c.surveyTime || '',
+      c.status || '',
+      c.message || ''
+    ])
+
+    const csvContent = [
+      headers.map(escapeCSV).join(','),
+      ...rows.map(row => row.map(escapeCSV).join(','))
+    ].join('\r\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    const today = new Date().toISOString().split('T')[0]
+    link.href = url
+    link.setAttribute('download', `itworks-leads-${today}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    
+    showMsg(`Successfully exported ${filtered.length} leads to CSV.`)
   }
 
   const showMsg = (text, type = 'success') => {
@@ -380,7 +525,7 @@ export default function Admin() {
   const handleAboutTeamAdd = () => {
     setAboutForm(prev => ({
       ...prev,
-      team: [...prev.team, { name: '', role: '', bio: '', initials: '', color: 'av-green' }]
+      team: [...prev.team, { name: '', role: '', bio: '', initials: '', color: 'av-green', avatarUrl: '' }]
     }))
   }
 
@@ -618,6 +763,12 @@ export default function Admin() {
             Quote Requests ({contacts.length})
           </button>
           <button 
+            className={`tab-btn ${activeTab === 'reviews' ? 'active' : ''}`} 
+            onClick={() => { setActiveTab('reviews'); setIsFormOpen(false); }}
+          >
+            Client Reviews ({adminReviews.length})
+          </button>
+          <button 
             className={`tab-btn ${activeTab === 'analytics' ? 'active' : ''}`} 
             onClick={() => { setActiveTab('analytics'); setIsFormOpen(false); }}
           >
@@ -625,7 +776,7 @@ export default function Admin() {
           </button>
         </div>
         
-        {activeTab !== 'about' && activeTab !== 'contacts' && activeTab !== 'analytics' && (
+        {activeTab !== 'about' && activeTab !== 'contacts' && activeTab !== 'reviews' && activeTab !== 'analytics' && (
           <button className="btn-primary add-new-btn" onClick={handleAddClick}>
             + Add New {activeTab === 'projects' ? 'Project' : 'Service'}
           </button>
@@ -861,6 +1012,56 @@ export default function Admin() {
                         </select>
                       </div>
                     </div>
+                    <div className="form-row" style={{alignItems: 'center', gap: '16px'}}>
+                      <div className="form-group" style={{flex: 1}}>
+                        <label>Avatar Image File (Click to upload)</label>
+                        <input 
+                          type="file" 
+                          accept="image/*"
+                          style={{display: 'none'}}
+                          id={`avatar-upload-${i}`}
+                          onChange={e => {
+                            const file = e.target.files[0];
+                            if (file) {
+                              if (file.size > 1.5 * 1024 * 1024) {
+                                alert("Image is too large. Please select an image under 1.5MB.");
+                                return;
+                              }
+                              const reader = new FileReader();
+                              reader.onloadend = () => {
+                                handleAboutTeamChange(i, 'avatarUrl', reader.result);
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                        />
+                        <div style={{display: 'flex', gap: '8px'}}>
+                          <button 
+                            type="button" 
+                            className="btn-add-item" 
+                            style={{padding: '8px 14px', fontSize: '12px'}}
+                            onClick={() => document.getElementById(`avatar-upload-${i}`).click()}
+                          >
+                            Choose Image
+                          </button>
+                          {m.avatarUrl && (
+                            <button 
+                              type="button" 
+                              className="btn-remove-item" 
+                              style={{padding: '8px 14px', fontSize: '12px', background: 'rgba(224, 58, 58, 0.1)', borderColor: 'rgba(224, 58, 58, 0.2)', color: '#e03a3a'}}
+                              onClick={() => handleAboutTeamChange(i, 'avatarUrl', '')}
+                            >
+                              Remove Image
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      {m.avatarUrl && (
+                        <div className="avatar-preview-box" style={{width: '54px', height: '54px', borderRadius: '50%', overflow: 'hidden', border: '1.5px solid var(--green)', flexShrink: 0}}>
+                          <img src={m.avatarUrl} alt="Preview" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+                        </div>
+                      )}
+                    </div>
                     <div className="form-group">
                       <label>Short Bio</label>
                       <textarea 
@@ -922,6 +1123,19 @@ export default function Admin() {
                     <option value="Structured Cabling">Structured Cabling</option>
                   </select>
                 </div>
+                <button
+                  type="button"
+                  className="export-leads-btn"
+                  onClick={handleExportLeads}
+                  title="Export filtered leads to CSV"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginRight: 4 }}>
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                  </svg>
+                  Export CSV
+                </button>
               </div>
             </div>
 
@@ -993,6 +1207,11 @@ export default function Admin() {
                                 <td>
                                   <div>{c.location}</div>
                                   {c.size && <div style={{ fontSize: '11px', color: 'var(--grey2)', marginTop: '2px' }}>Size: {c.size}</div>}
+                                  {c.surveyDate && (
+                                    <div className="crm-survey-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(43,176,74,0.1)', border: '1px solid rgba(43,176,74,0.2)', color: 'var(--green)', fontSize: '11px', fontWeight: 'bold', padding: '2px 6px', borderRadius: '4px', marginTop: '4px' }}>
+                                      📅 {c.surveyDate} ({c.surveyTime.split(' ')[0]})
+                                    </div>
+                                  )}
                                 </td>
                                 <td>
                                   <select
@@ -1019,6 +1238,14 @@ export default function Admin() {
                                 <tr className="row-expanded-details">
                                   <td colSpan="7">
                                     <div className="crm-expanded-message-box">
+                                      {c.surveyDate && (
+                                        <div style={{ marginBottom: '14px', paddingBottom: '12px', borderBottom: '1px dashed var(--black4)' }}>
+                                          <div className="message-label" style={{ color: 'var(--green)', marginBottom: '4px' }}>📅 Requested Site Survey Slot:</div>
+                                          <p className="message-text" style={{ fontWeight: 'bold', color: 'var(--white)' }}>
+                                            {c.surveyDate} — {c.surveyTime}
+                                          </p>
+                                        </div>
+                                      )}
                                       <div className="message-label">Customer Message:</div>
                                       <p className="message-text">{c.message || 'No message provided.'}</p>
                                     </div>
@@ -1145,22 +1372,77 @@ export default function Admin() {
               <div className="analytics-chart-card service-card">
                 <h3>Services Distribution</h3>
                 <p className="card-sub">Requested WiFi & Networks</p>
-                <div className="service-bars-list">
+                <div className="chart-wrapper-premium" style={{ display: 'flex', alignItems: 'center', minHeight: '180px' }}>
                   {totalLeads > 0 ? (
-                    serviceData.map(({ name, count }) => {
-                      const percentage = Math.round((count / totalLeads) * 100)
-                      return (
-                        <div key={name} className="service-bar-item">
-                          <div className="bar-labels">
-                            <span className="bar-name">{name}</span>
-                            <span className="bar-value">{count} ({percentage}%)</span>
-                          </div>
-                          <div className="bar-track">
-                            <div className="bar-fill" style={{ width: `${percentage}%` }} />
-                          </div>
+                    <div className="donut-chart-container" style={{ display: 'flex', alignItems: 'center', gap: '32px', width: '100%' }}>
+                      <div className="svg-donut-wrapper" style={{ width: '150px', height: '150px', position: 'relative', flexShrink: 0 }}>
+                        <svg viewBox="0 0 160 160" width="100%" height="100%" style={{ transform: 'rotate(-90deg)', overflow: 'visible' }}>
+                          {/* Background Track */}
+                          <circle cx="80" cy="80" r="50" fill="none" stroke="var(--black4)" strokeWidth="15" />
+                          
+                          {(() => {
+                            let accumulatedPercent = 0
+                            const colors = ['#2bb04a', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4', '#e8401a']
+                            return serviceData.map((d, idx) => {
+                              if (d.count === 0) return null
+                              const pct = d.count / totalLeads
+                              const strokeLength = pct * 314.16
+                              const strokeOffset = 314.16 - (accumulatedPercent * 314.16)
+                              accumulatedPercent += pct
+                              const color = colors[idx % colors.length]
+                              
+                              return (
+                                <g key={d.name} className="chart-donut-group">
+                                  <circle
+                                    cx="80"
+                                    cy="80"
+                                    r="50"
+                                    fill="none"
+                                    stroke={color}
+                                    strokeWidth="15"
+                                    strokeDasharray={`${strokeLength} 314.16`}
+                                    strokeDashoffset={strokeOffset}
+                                    strokeLinecap="round"
+                                    style={{ transition: 'stroke-dashoffset 0.5s ease', cursor: 'pointer' }}
+                                  />
+                                  <g className="donut-tooltip">
+                                    <rect x="50" y="5" width="60" height="24" rx="4" fill="var(--black2)" stroke="var(--black4)" strokeWidth="1" transform="rotate(90 80 80)" />
+                                    <text x="80" y="21" fill="var(--white)" fontSize="9" fontWeight="700" textAnchor="middle" transform="rotate(90 80 80)">{d.count} ({Math.round(pct * 100)}%)</text>
+                                  </g>
+                                </g>
+                              )
+                            })
+                          })()}
+                        </svg>
+                        
+                        {/* Donut Center Display */}
+                        <div className="donut-center-info" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', pointerEvents: 'none' }}>
+                          <span style={{ fontSize: '20px', fontWeight: '800', fontFamily: 'var(--font-display)', color: 'var(--white)', display: 'block', lineHeight: 1 }}>{totalLeads}</span>
+                          <span style={{ fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--grey2)', letterSpacing: '0.5px', marginTop: '2px', display: 'block' }}>Leads</span>
                         </div>
-                      )
-                    })
+                      </div>
+                      
+                      {/* Interactive Custom Legend */}
+                      <div className="donut-legend" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {(() => {
+                          const colors = ['#2bb04a', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4', '#e8401a']
+                          return serviceData.map((d, idx) => {
+                            if (d.count === 0) return null
+                            const color = colors[idx % colors.length]
+                            const pct = Math.round((d.count / totalLeads) * 100)
+                            return (
+                              <div key={d.name} className="legend-item" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: color, display: 'inline-block' }} />
+                                  <span style={{ color: 'var(--grey1)', fontWeight: '600' }}>{d.name}</span>
+                                </div>
+                                <span style={{ color: 'var(--white)', fontWeight: '700' }}>{d.count} ({pct}%)</span>
+                              </div>
+                            )
+                          })
+                        })()}
+                      </div>
+                    </div>
                   ) : (
                     <div className="no-data-placeholder">No quote statistics available.</div>
                   )}
@@ -1174,26 +1456,70 @@ export default function Admin() {
               <div className="analytics-chart-card location-leaderboard">
                 <h3>Top Active Locations</h3>
                 <p className="card-sub">Hotspot & Cabling hotspots</p>
-                <div className="location-list">
+                <div className="chart-wrapper-premium" style={{ display: 'flex', alignItems: 'center', minHeight: '180px', width: '100%', marginTop: '10px' }}>
                   {locationData.length > 0 ? (
-                    locationData.map(({ name, count }, index) => {
-                      const maxLocCount = locationData[0].count
-                      const widthPercent = Math.round((count / maxLocCount) * 100)
-                      return (
-                        <div key={name} className="location-item">
-                          <div className="loc-rank">#{index + 1}</div>
-                          <div className="loc-details">
-                            <div className="loc-header">
-                              <span className="loc-name">{name}</span>
-                              <span className="loc-count">{count} leads</span>
-                            </div>
-                            <div className="loc-track">
-                              <div className="loc-fill" style={{ width: `${widthPercent}%` }} />
-                            </div>
-                          </div>
-                        </div>
-                      )
-                    })
+                    <div className="bar-chart-container" style={{ width: '100%', height: '160px' }}>
+                      <svg viewBox="0 0 400 160" width="100%" height="100%" style={{ overflow: 'visible' }}>
+                        <defs>
+                          <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#2bb04a" />
+                            <stop offset="100%" stopColor="#06b6d4" />
+                          </linearGradient>
+                        </defs>
+                        
+                        {/* Horizontal Gridlines */}
+                        {[0, 1, 2, 3].map(i => {
+                          const y = 15 + i * 35
+                          return (
+                            <line key={i} x1="30" y1={y} x2="380" y2={y} stroke="var(--black5)" strokeWidth="1" strokeDasharray="3 3" />
+                          )
+                        })}
+
+                        {/* Rendering Bars */}
+                        {(() => {
+                          const maxVal = Math.max(...locationData.map(ld => ld.count), 4)
+                          return locationData.map((d, idx) => {
+                            const barWidth = 28
+                            const spacing = 70
+                            const x = 45 + idx * spacing
+                            const barHeight = (d.count / maxVal) * 105
+                            const y = 135 - barHeight
+                            
+                            return (
+                              <g key={d.name} className="chart-bar-group">
+                                {/* Bar */}
+                                <rect
+                                  x={x}
+                                  y={y}
+                                  width={barWidth}
+                                  height={barHeight}
+                                  rx="4"
+                                  fill="url(#barGradient)"
+                                  className="svg-bar"
+                                  style={{ transition: 'height 0.3s ease, y 0.3s ease', cursor: 'pointer' }}
+                                />
+                                {/* Value Text Above Bar */}
+                                <text x={x + barWidth / 2} y={y - 6} fill="var(--white)" fontSize="9" fontWeight="700" textAnchor="middle">
+                                  {d.count}
+                                </text>
+                                {/* X Label (Truncated if too long) */}
+                                <text x={x + barWidth / 2} y="150" fill="var(--grey2)" fontSize="10" fontWeight="600" textAnchor="middle">
+                                  {d.name.length > 9 ? `${d.name.slice(0, 8)}…` : d.name}
+                                </text>
+                                {/* Tooltip on Hover */}
+                                <g className="bar-tooltip">
+                                  <rect x={x - 24} y={y - 34} width="76" height="22" rx="4" fill="var(--black2)" stroke="var(--black4)" strokeWidth="1" />
+                                  <text x={x + barWidth / 2} y={y - 19} fill="var(--white)" fontSize="9" fontWeight="700" textAnchor="middle">{d.name}</text>
+                                </g>
+                              </g>
+                            )
+                          })
+                        })()}
+                        
+                        {/* Base Line */}
+                        <line x1="30" y1="135" x2="380" y2="135" stroke="var(--black4)" strokeWidth="2" />
+                      </svg>
+                    </div>
                   ) : (
                     <div className="no-data-placeholder">No location data submitted.</div>
                   )}
@@ -1222,6 +1548,68 @@ export default function Admin() {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        ) : activeTab === 'reviews' ? (
+          <div className="crm-lead-container">
+            <div className="table-responsive">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Client Name</th>
+                    <th>Role / Location</th>
+                    <th>Feedback</th>
+                    <th>Rating</th>
+                    <th>Status</th>
+                    <th style={{ textAlign: 'center' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {adminReviews.length > 0 ? (
+                    adminReviews.map(r => {
+                      const dateFormatted = new Date(r.createdAt).toLocaleDateString('en-KE', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                      })
+                      return (
+                        <tr key={r._id}>
+                          <td style={{ fontSize: '13px', color: 'var(--grey2)' }}>{dateFormatted}</td>
+                          <td className="font-semibold">{r.name}</td>
+                          <td>{r.role}</td>
+                          <td style={{ maxWidth: '300px', whiteSpace: 'normal', fontSize: '13px', color: 'var(--grey1)' }}>{r.text}</td>
+                          <td>
+                            <span style={{ color: 'var(--green)' }}>{'★'.repeat(r.rating || 5)}{'☆'.repeat(5 - (r.rating || 5))}</span>
+                          </td>
+                          <td>
+                            <select
+                              className={`crm-status-dropdown status-${r.status === 'approved' ? 'converted' : 'new'}`}
+                              value={r.status}
+                              onChange={e => handleReviewStatusUpdate(r._id, e.target.value)}
+                              style={{ width: '120px' }}
+                            >
+                              <option value="pending">Pending</option>
+                              <option value="approved">Approved</option>
+                            </select>
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <button className="btn-delete" onClick={() => handleReviewDelete(r._id)}>
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan="7" style={{ textAlign: 'center', padding: '40px 0', color: 'var(--grey2)' }}>
+                        No reviews found.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         ) : (

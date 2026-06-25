@@ -29,6 +29,7 @@ const DEFAULT_VALUE_ICON = <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
 export default function About() {
   const revealRef = useReveal()
   const [content, setContent] = useState(null)
+  const [engIndex, setEngIndex] = useState(0)
 
   useEffect(() => {
     fetch('/api/about')
@@ -67,10 +68,66 @@ export default function About() {
       <section className="page-hero">
         <div className="page-hero-bg"/><div className="hero-grid"/>
         <div className="page-hero-inner">
-          <div className="breadcrumb"><Link to="/">Home</Link><span>/</span><span style={{color:'#fff'}}>About</span></div>
-          <div className="section-label" style={{animation:'fadeUp 0.7s ease both'}}>Our Story</div>
-          <h1 style={{animation:'fadeUp 0.7s 0.1s ease both'}}>Built on <span>Trust.</span><br/>Powered by<br/>Technology.</h1>
-          <p style={{animation:'fadeUp 0.7s 0.2s ease both',marginTop:16}}>We're not just an IT company. We're the team that shows up on time, explains everything clearly, does the work right, and comes back when you need us.</p>
+          <div className="page-hero-left">
+            <div className="breadcrumb"><Link to="/">Home</Link><span>/</span><span style={{color:'#fff'}}>About</span></div>
+            <div className="section-label" style={{animation:'fadeUp 0.7s ease both'}}>Our Story</div>
+            <h1 style={{animation:'fadeUp 0.7s 0.1s ease both'}}>Built on <span>Trust.</span><br/>Powered by<br/>Technology.</h1>
+            <p style={{animation:'fadeUp 0.7s 0.2s ease both',marginTop:16}}>We're not just an IT company. We're the team that shows up on time, explains everything clearly, does the work right, and comes back when you need us.</p>
+          </div>
+          <div className="page-hero-right">
+            <div className="page-hero-widget">
+              <div className="widget-header">
+                <h3 className="widget-title">Meet Our <span>Engineers</span></h3>
+                <div className="widget-status">
+                  <span className="widget-status-dot"></span>
+                  Active
+                </div>
+              </div>
+              <div className="widget-content">
+                {team && team.length > 0 && team[engIndex] ? (
+                  <>
+                    <div className="widget-engineer-card" key={engIndex} style={{animation:'fadeUp 0.3s ease both'}}>
+                      <div className={`widget-engineer-avatar ${team[engIndex].color || 'av-green'}`} style={{fontSize: 16, fontWeight: 800, color: 'var(--white)', overflow: 'hidden', padding: 0}}>
+                        {team[engIndex].avatarUrl ? (
+                          <img src={team[engIndex].avatarUrl} alt={team[engIndex].name} style={{width:'100%',height:'100%',objectFit:'cover'}} />
+                        ) : (
+                          team[engIndex].initials || team[engIndex].name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+                        )}
+                      </div>
+                      <h4 className="widget-engineer-name">{team[engIndex].name}</h4>
+                      <span className="widget-engineer-role">{team[engIndex].role}</span>
+                      <p className="widget-engineer-bio">{team[engIndex].bio}</p>
+                      <span className="widget-engineer-badge">
+                        {team[engIndex].name === 'John Kibet' ? 'MikroTik Certified' :
+                         team[engIndex].name === 'David Korir' ? 'Fiber Specialist' :
+                         team[engIndex].name === 'Alice Jepkoech' ? 'Operations Lead' :
+                         team[engIndex].role || 'IT Specialist'}
+                      </span>
+                    </div>
+                    <div className="widget-engineer-nav">
+                      <button 
+                        className="widget-nav-btn"
+                        onClick={() => setEngIndex(prev => (prev === 0 ? team.length - 1 : prev - 1))}
+                      >
+                        &larr;
+                      </button>
+                      <span style={{fontSize:11,color:'var(--grey3)',fontFamily:'var(--font-mono)'}}>
+                        {engIndex + 1} / {team.length}
+                      </span>
+                      <button 
+                        className="widget-nav-btn"
+                        onClick={() => setEngIndex(prev => (prev === team.length - 1 ? 0 : prev + 1))}
+                      >
+                        &rarr;
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <p style={{fontSize:13,color:'var(--grey3)',textAlign:'center'}}>No team members loaded.</p>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -135,8 +192,12 @@ export default function About() {
         <div className="team-grid">
           {team.map((m, i) => (
             <div key={m.name || i} className={`team-card reveal reveal-delay-${i % 3}`}>
-              <div className={`team-avatar ${m.color || 'av-green'}`}>
-                {m.initials || m.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+              <div className={`team-avatar ${m.color || 'av-green'}`} style={{overflow: 'hidden', padding: 0}}>
+                {m.avatarUrl ? (
+                  <img src={m.avatarUrl} alt={m.name} style={{width:'100%',height:'100%',objectFit:'cover'}} />
+                ) : (
+                  m.initials || m.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+                )}
               </div>
               <h4>{m.name}</h4>
               <div className="role">{m.role}</div>
